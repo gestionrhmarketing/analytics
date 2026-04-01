@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Insights — Reportes</title>
+  <meta name="description" content="Plataforma de registro y análisis de métricas digitales para web y redes sociales." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== TOP NAVBAR ===== -->
+<nav class="navbar" id="navbar">
+  <div class="navbar-left">
+    <div class="company-tabs" id="companyTabs">
+      <button class="company-tab active" data-company="EHS" id="tab-EHS">
+        <img src="https://ui-avatars.com/api/?name=EHS&background=1A73E8&color=fff&size=24&rounded=true&bold=true" alt="EHS" class="tab-logo" />
+        <span>EHS</span>
+      </button>
+      <button class="company-tab" data-company="GESTIONRH" id="tab-GESTIONRH">
+        <img src="https://ui-avatars.com/api/?name=GRH&background=E8430A&color=fff&size=24&rounded=true&bold=true" alt="GRH" class="tab-logo" />
+        <span>GESTIONRH</span>
+      </button>
+      <button class="company-tab" data-company="ACADEMYGRH" id="tab-ACADEMYGRH">
+        <img src="https://ui-avatars.com/api/?name=AG&background=0DA855&color=fff&size=24&rounded=true&bold=true" alt="AGH" class="tab-logo" />
+        <span>ACADEMYGRH</span>
+      </button>
+    </div>
+  </div>
+  <div class="navbar-right">
+    <button class="btn-login" id="btnLogin">Ingresar Datos</button>
+    <button class="btn-reporte" id="btnReporte">Reporte</button>
+    <span class="status-dot" id="statusDot" title="Sin cambios pendientes"></span>
+  </div>
+</nav>
+
+<!-- ===== SUBBAR: Period + Actions ===== -->
+<div class="subbar">
+  <div class="period-selector">
+    <button class="period-nav" id="prevPeriod">&#8592;</button>
+    <div class="period-display">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span id="periodLabel">Marzo 2026</span>
+    </div>
+    <button class="period-nav" id="nextPeriod">&#8594;</button>
+  </div>
+  <div class="subbar-right">
+    <button class="btn-compare" id="btnCompare">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Comparar
+    </button>
+    <button class="btn-pdf" id="btnPdf">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar PDF
+    </button>
+  </div>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="reportContent">
+
+  <!-- Company Banner -->
+  <div class="company-banner" id="companyBanner">
+    <div class="banner-logo-wrap">
+      <img id="bannerLogo" src="https://ui-avatars.com/api/?name=EHS&background=fff&color=1A73E8&size=48&bold=true" alt="Logo" />
+    </div>
+    <h1 id="bannerName">EHS INTEGRAL</h1>
+  </div>
+
+  <!-- ===== ATRACCIÓN ===== -->
+  <section class="section-grid two-col">
+    <!-- Web SEO Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+        <h2 class="card-title">ATRACCIÓN — WEB SEO</h2>
+      </div>
+      <div class="metrics-row">
+        <div class="metric highlight-metric" style="grid-column: span 2; background: #f0f7ff; padding: 1rem; border-radius: 8px;">
+          <span class="metric-label" style="color: #1A73E8; font-weight: 600;">Impresiones Web Totales</span>
+          <span class="metric-value massive-value" id="web_impresiones_totales" style="color: #1A73E8;">—</span>
+          <div class="sub-metrics" style="display: flex; gap: 1rem; margin-top: 0.5rem; justify-content: space-between; font-size: 0.85rem; color: #5F6368;">
+            <div>Orgánicas: <strong id="web_impresiones_organicas" style="color:#202124;">0</strong></div>
+            <div>Pub. (Google Ads): <strong id="web_impresiones_ads" style="color:#202124;">0</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap small-chart" style="margin-top: 2rem;">
+        <canvas id="chartWebImpresiones"></canvas>
+      </div>
+
+      <div class="metrics-row three-col" style="margin-top: 1.5rem; border-top: 1px solid #e0e0e0; padding-top: 1.5rem;">
+        <div class="metric highlight">
+          <span class="metric-value" id="web_posicion_google" style="color: #1A73E8; font-size: 1.5rem;">—</span>
+          <span class="metric-label" style="font-size: 0.8rem;">Pos. Promedio</span>
+        </div>
+        <div class="metric highlight" style="grid-column: span 2;">
+          <span class="metric-label" style="margin-bottom: 0.5rem; display: block; font-size: 0.8rem;">Páginas más visitadas</span>
+          <div id="web_paginas_top" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">—</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <h3 style="font-size: 0.9rem; color: #5f6368; margin-bottom: 0.75rem; text-transform: uppercase; text-align: center;">Tráfico por UTM (Redes Sociales)</h3>
+        <div class="metrics-grid align-start" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 0.5rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: #E1306C; margin-bottom: 0.25rem;"><i class="fab fa-instagram"></i> IG</div>
+            <div class="value" id="web_utm_ig" style="font-size: 1.1rem;">0</div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 0.5rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: #1877F2; margin-bottom: 0.25rem;"><i class="fab fa-facebook"></i> FB</div>
+            <div class="value" id="web_utm_fb" style="font-size: 1.1rem;">0</div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 0.5rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: #000000; margin-bottom: 0.25rem;"><i class="fab fa-tiktok"></i> TT</div>
+            <div class="value" id="web_utm_tt" style="font-size: 1.1rem;">0</div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 0.5rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: #FF0000; margin-bottom: 0.25rem;"><i class="fab fa-youtube"></i> YT</div>
+            <div class="value" id="web_utm_yt" style="font-size: 1.1rem;">0</div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 0.5rem; text-align: center; grid-column: span 2;">
+            <div style="font-size: 0.75rem; color: #0A66C2; margin-bottom: 0.25rem;"><i class="fab fa-linkedin"></i> LinkedIn</div>
+            <div class="value" id="web_utm_li" style="font-size: 1.1rem;">0</div>
+          </div>
+        </div>
+        <div class="chart-wrap small-chart" style="margin-top: 1.5rem;">
+          <canvas id="chartWebUTM"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Impresiones Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2H7a5 5 0 00-5 5v10a5 5 0 005 5h10a5 5 0 005-5V7a5 5 0 00-5-5z"/><circle cx="12" cy="12" r="3"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg></div>
+        <h2 class="card-title">ATRACCIÓN — SOCIAL MEDIA</h2>
+      </div>
+      
+      <div class="metrics-row" style="margin-bottom: 2rem;">
+         <div class="metric highlight-metric" style="width: 100%; text-align: center; background: #fdf5ff; padding: 1.5rem; border-radius: 8px; border: 1px solid #f4e1f7;">
+            <span class="metric-label" style="color: #7B1FA2; font-weight: 600; font-size: 1.1rem;">Impresiones Social Media Totales</span>
+            <span class="metric-value" id="social_impresiones_totales" style="color: #7B1FA2; font-size: 2.5rem;">0</span>
+         </div>
+      </div>
+
+      <div class="chart-and-metrics" style="display: flex; flex-direction: column; gap: 2rem; align-items: stretch;">
+        <div class="metrics-grid align-start" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #E1306C;"><i class="fab fa-instagram"></i> Instagram</h3>
+            <div class="value" id="ig_impresiones_totales" style="font-size: 1.5rem;">0</div>
+            <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+              <span>Org: <strong id="ig_impresiones_organicas" style="color:#202124;">0</strong></span>
+              <span>Ads: <strong id="ig_impresiones_ads" style="color:#202124;">0</strong></span>
+            </div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #1877F2;"><i class="fab fa-facebook"></i> Facebook</h3>
+            <div class="value" id="fb_impresiones_totales" style="font-size: 1.5rem;">0</div>
+            <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+              <span>Org: <strong id="fb_impresiones_organicas" style="color:#202124;">0</strong></span>
+              <span>Ads: <strong id="fb_impresiones_ads" style="color:#202124;">0</strong></span>
+            </div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #000000;"><i class="fab fa-tiktok"></i> TikTok</h3>
+            <div class="value" id="tt_impresiones_totales" style="font-size: 1.5rem;">0</div>
+            <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+              <span>Org: <strong id="tt_impresiones_organicas" style="color:#202124;">0</strong></span>
+              <span>Ads: <strong id="tt_impresiones_ads" style="color:#202124;">0</strong></span>
+            </div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #FF0000;"><i class="fab fa-youtube"></i> YouTube</h3>
+            <div class="value" id="yt_impresiones_totales" style="font-size: 1.5rem;">0</div>
+            <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+              <span>Org: <strong id="yt_impresiones_organicas" style="color:#202124;">0</strong></span>
+              <span>Ads: <strong id="yt_impresiones_ads" style="color:#202124;">0</strong></span>
+            </div>
+          </div>
+          <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem; grid-column: span 2;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #0A66C2;"><i class="fab fa-linkedin"></i> LinkedIn</h3>
+            <div class="value" id="li_impresiones_totales" style="font-size: 1.5rem;">0</div>
+            <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+              <span>Org: <strong id="li_impresiones_organicas" style="color:#202124;">0</strong></span>
+              <span>Ads: <strong id="li_impresiones_ads" style="color:#202124;">0</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap small-chart" style="margin-top: 2rem;">
+        <canvas id="chartSocialImpresiones"></canvas>
+      </div>
+    </div>
+    
+  </section>
+
+  <!-- ===== RESUMEN GLOBAL ATRACCIÓN ===== -->
+  <section class="card full-card" style="background: linear-gradient(135deg, #1A73E8, #7B1FA2); color: white; text-align: center; border: none; padding: 3rem;">
+     <h2 style="font-size: 1.2rem; font-weight: 500; opacity: 0.9; margin-bottom: 0.5rem;">IMPRESIONES GLOBALES TOTALES</h2>
+     <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1.5rem;">(Web SEO + Social Media Orgánicas/Ads)</div>
+     <div class="value" id="global_impresiones_totales" style="font-size: 4rem; color: white; line-height: 1;">0</div>
+  </section>
+
+  <!-- ===== INTERACCIÓN ===== -->
+  <section class="section-grid two-col" style="margin-top: 2rem;">
+    <!-- Web Interaction Card (Left) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg></div>
+        <h2 class="card-title">INTERACCIÓN — WEB</h2>
+      </div>
+      <div class="metrics-row">
+        <div class="metric highlight-metric" style="grid-column: span 2; background: #f0f7ff; padding: 1rem; border-radius: 8px;">
+          <span class="metric-label" style="color: #1A73E8; font-weight: 600;">Visitas Web Totales</span>
+          <span class="metric-value massive-value" id="web_visitas_totales" style="color: #1A73E8;">—</span>
+          <div class="sub-metrics" style="display: flex; gap: 1rem; margin-top: 0.5rem; justify-content: space-between; font-size: 0.85rem; color: #5F6368;">
+            <div>Orgánicas: <strong id="web_visitas_organicas" style="color:#202124;">0</strong></div>
+            <div>Pub. (Ads): <strong id="web_visitas_ads" style="color:#202124;">0</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap small-chart" style="margin-top: 2rem;">
+        <canvas id="chartWebVisitas"></canvas>
+      </div>
+    </div>
+
+    <!-- Social Interaction Total Card (Right) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon orange"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <h2 class="card-title">INTERACCIÓN — SOCIAL MEDIA TOTAL</h2>
+      </div>
+      <div class="metrics-row" style="margin-bottom: 2rem;">
+         <div class="metric highlight-metric" style="width: 100%; text-align: center; background: #fff5eb; padding: 1.5rem; border-radius: 8px; border: 1px solid #ffdcb8;">
+            <span class="metric-label" style="color: #E65100; font-weight: 600; font-size: 1.1rem;">Interacciones Totales</span>
+            <span class="metric-value" id="social_interacciones_totales" style="color: #E65100; font-size: 2.5rem;">0</span>
+         </div>
+      </div>
+      <div class="chart-wrap small-chart" style="margin-top: 2rem;">
+        <canvas id="chartSocialInteracciones"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Individual Social Cards (Horizontal Row) -->
+  <section class="card full-card" style="margin-top: 1rem; padding: 1.5rem; background: #fdfdfd;">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
+      <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #E1306C;"><i class="fab fa-instagram"></i> Instagram</h3>
+        <div class="value" id="ig_interacciones_totales" style="font-size: 1.5rem;">0</div>
+        <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+          <span>Org: <strong id="ig_interacciones_organicas" style="color:#202124;">0</strong></span>
+          <span>Ads: <strong id="ig_interacciones_ads" style="color:#202124;">0</strong></span>
+        </div>
+        <div style="font-size: 0.75rem; color: #5f6368; margin-top: 0.75rem; border-top: 1px solid #eee; padding-top: 0.5rem; display: grid; grid-template-columns: 1fr; gap: 0.25rem;">
+          <div>Likes: <strong id="ig_likes" style="color:#202124;">0</strong></div>
+          <div>Coments: <strong id="ig_comentarios" style="color:#202124;">0</strong></div>
+          <div>Comparts: <strong id="ig_compartidos" style="color:#202124;">0</strong></div>
+          <div>Guards: <strong id="ig_guardados" style="color:#202124;">0</strong></div>
+          <div>Clics: <strong id="ig_clics" style="color:#202124;">0</strong></div>
+          <div style="margin-top: 0.25rem; font-weight: 600; color: #E1306C;">Seguidores: <strong id="ig_seguidores">0</strong></div>
+        </div>
+      </div>
+      <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #1877F2;"><i class="fab fa-facebook"></i> Facebook</h3>
+        <div class="value" id="fb_interacciones_totales" style="font-size: 1.5rem;">0</div>
+        <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+          <span>Org: <strong id="fb_interacciones_organicas" style="color:#202124;">0</strong></span>
+          <span>Ads: <strong id="fb_interacciones_ads" style="color:#202124;">0</strong></span>
+        </div>
+        <div style="font-size: 0.75rem; color: #5f6368; margin-top: 0.75rem; border-top: 1px solid #eee; padding-top: 0.5rem; display: grid; grid-template-columns: 1fr; gap: 0.25rem;">
+          <div>Likes: <strong id="fb_likes" style="color:#202124;">0</strong></div>
+          <div>Coments: <strong id="fb_comentarios" style="color:#202124;">0</strong></div>
+          <div>Comparts: <strong id="fb_compartidos" style="color:#202124;">0</strong></div>
+          <div>Guards: <strong id="fb_guardados" style="color:#202124;">0</strong></div>
+          <div>Clics: <strong id="fb_clics" style="color:#202124;">0</strong></div>
+          <div style="margin-top: 0.25rem; font-weight: 600; color: #1877F2;">Seguidores: <strong id="fb_seguidores">0</strong></div>
+        </div>
+      </div>
+      <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #000000;"><i class="fab fa-tiktok"></i> TikTok</h3>
+        <div class="value" id="tt_interacciones_totales" style="font-size: 1.5rem;">0</div>
+        <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+          <span>Org: <strong id="tt_interacciones_organicas" style="color:#202124;">0</strong></span>
+          <span>Ads: <strong id="tt_interacciones_ads" style="color:#202124;">0</strong></span>
+        </div>
+        <div style="font-size: 0.75rem; color: #5f6368; margin-top: 0.75rem; border-top: 1px solid #eee; padding-top: 0.5rem; display: grid; grid-template-columns: 1fr; gap: 0.25rem;">
+          <div>Likes: <strong id="tt_likes" style="color:#202124;">0</strong></div>
+          <div>Coments: <strong id="tt_comentarios" style="color:#202124;">0</strong></div>
+          <div>Comparts: <strong id="tt_compartidos" style="color:#202124;">0</strong></div>
+          <div>Guards: <strong id="tt_guardados" style="color:#202124;">0</strong></div>
+          <div>Clics: <strong id="tt_clics" style="color:#202124;">0</strong></div>
+          <div style="margin-top: 0.25rem; font-weight: 600; color: #000000;">Seguidores: <strong id="tt_seguidores">0</strong></div>
+        </div>
+      </div>
+      <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #FF0000;"><i class="fab fa-youtube"></i> YouTube</h3>
+        <div class="value" id="yt_interacciones_totales" style="font-size: 1.5rem;">0</div>
+        <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+          <span>Org: <strong id="yt_interacciones_organicas" style="color:#202124;">0</strong></span>
+          <span>Ads: <strong id="yt_interacciones_ads" style="color:#202124;">0</strong></span>
+        </div>
+        <div style="font-size: 0.75rem; color: #5f6368; margin-top: 0.75rem; border-top: 1px solid #eee; padding-top: 0.5rem; display: grid; grid-template-columns: 1fr; gap: 0.25rem;">
+          <div>Likes: <strong id="yt_likes" style="color:#202124;">0</strong></div>
+          <div>Coments: <strong id="yt_comentarios" style="color:#202124;">0</strong></div>
+          <div>Comparts: <strong id="yt_compartidos" style="color:#202124;">0</strong></div>
+          <div>Guards: <strong id="yt_guardados" style="color:#202124;">0</strong></div>
+          <div>Clics: <strong id="yt_clics" style="color:#202124;">0</strong></div>
+          <div style="margin-top: 0.25rem; font-weight: 600; color: #FF0000;">Seguidores: <strong id="yt_seguidores">0</strong></div>
+        </div>
+      </div>
+      <div class="card" style="box-shadow: none; border: 1px solid #e0e0e0; padding: 1rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #0A66C2;"><i class="fab fa-linkedin"></i> LinkedIn</h3>
+        <div class="value" id="li_interacciones_totales" style="font-size: 1.5rem;">0</div>
+        <div style="font-size: 0.8rem; color: #5f6368; display: flex; justify-content: space-between; margin-top: 0.5rem;">
+          <span>Org: <strong id="li_interacciones_organicas" style="color:#202124;">0</strong></span>
+          <span>Ads: <strong id="li_interacciones_ads" style="color:#202124;">0</strong></span>
+        </div>
+        <div style="font-size: 0.75rem; color: #5f6368; margin-top: 0.75rem; border-top: 1px solid #eee; padding-top: 0.5rem; display: grid; grid-template-columns: 1fr; gap: 0.25rem;">
+          <div>Likes: <strong id="li_likes" style="color:#202124;">0</strong></div>
+          <div>Coments: <strong id="li_comentarios" style="color:#202124;">0</strong></div>
+          <div>Comparts: <strong id="li_compartidos" style="color:#202124;">0</strong></div>
+          <div>Guards: <strong id="li_guardados" style="color:#202124;">0</strong></div>
+          <div>Clics: <strong id="li_clics" style="color:#202124;">0</strong></div>
+          <div style="margin-top: 0.25rem; font-weight: 600; color: #0A66C2;">Seguidores: <strong id="li_seguidores">0</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RESUMEN GLOBAL INTERACCIÓN Y SEGUIDORES ===== -->
+  <section class="card full-card" style="background: linear-gradient(135deg, #E65100, #FF9800); color: white; border: none; padding: 2rem; margin-top: 1rem;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
+      <!-- Lado Izquierdo: Interacciones -->
+      <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.2);">
+        <h2 style="font-size: 1.1rem; font-weight: 500; opacity: 0.9; margin-bottom: 0.5rem; text-transform: uppercase;">Interacciones Globales</h2>
+        <div style="font-size: 0.8rem; opacity: 0.8; margin-bottom: 1rem;">(Web SEO + Redes Sociales)</div>
+        <div class="value" id="global_interacciones_totales" style="font-size: 3.5rem; color: white; line-height: 1;">0</div>
+      </div>
+      <!-- Lado Derecho: Seguidores -->
+      <div style="text-align: center;">
+        <h2 style="font-size: 1.1rem; font-weight: 500; opacity: 0.9; margin-bottom: 0.5rem; text-transform: uppercase;">Seguidores Totales</h2>
+        <div style="font-size: 0.8rem; opacity: 0.8; margin-bottom: 1rem;">(Suma de todas las Redes Sociales)</div>
+        <div class="value" id="global_seguidores_totales" style="font-size: 3.5rem; color: white; line-height: 1;">0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONVERSIONES ===== -->
+  <section class="card center-card">
+    <div class="card-header center-header">
+      <div class="card-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+      <h2 class="card-title">CONVERSIONES</h2>
+    </div>
+    <div class="conversion-big">
+      <span class="big-number" id="conv_suma_contactos">—</span>
+      <span class="big-label">CONTACTOS TOTALES</span>
+    </div>
+    <div class="metrics-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; border-bottom: 1px solid #eee; padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+      <div class="metric">
+        <span class="metric-value" id="conv_whatsapp">—</span>
+        <span class="metric-label">WHATSAPP</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value" id="conv_llamadas">—</span>
+        <span class="metric-label">LLAMADAS</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value" id="conv_correos">—</span>
+        <span class="metric-label">CORREOS</span>
+      </div>
+    </div>
+    <div class="metrics-row three-col">
+      <div class="metric highlight" style="border-left: 3px solid #FF9800;">
+        <span class="metric-value" id="conv_cotizaciones">—</span>
+        <span class="metric-label">COTIZACIONES HECHAS</span>
+      </div>
+      <div class="metric highlight" style="border-left: 3px solid #00e676;">
+        <span class="metric-value currency" id="ventas_totales" style="color: #0d6b38;">$—</span>
+        <span class="metric-label">INGRESOS TOTALES</span>
+      </div>
+      <div class="metric highlight">
+        <span class="metric-value currency" id="ticket_promedio">$—</span>
+        <span class="metric-label">TICKET PROMEDIO</span>
+      </div>
+    </div>
+    <div style="display: none;" id="conversiones_totales">0</div> <!-- Hidden legacy/auto field -->
+  </section>
+
+  <!-- ===== RETARGETING ===== -->
+  <section class="card full-card">
+    <div class="card-header">
+      <div class="card-icon purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <h2 class="card-title">RETARGETING — EMAIL MARKETING</h2>
+    </div>
+    <div class="metrics-row two-col">
+      <div class="metric highlight">
+        <span class="metric-value" id="retargeting_correos">—</span>
+        <span class="metric-label">CORREOS ENVIADOS</span>
+      </div>
+      <div class="metric highlight">
+        <span class="metric-value" id="retargeting_apertura">—%</span>
+        <span class="metric-label">TASA DE APERTURA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FASE DE GASTOS DE INVERSIÓN ===== -->
+  <div style="margin-top: 10px; margin-bottom: -10px; padding-left: 5px;">
+    <h3 style="font-size: 14px; font-weight: 800; color: #d93025; letter-spacing: 1px; text-transform: uppercase;">📉 FASE DE GASTOS DE INVERSIÓN</h3>
+  </div>
+
+  <section class="section-grid two-col">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <h2 class="card-title">CAMPAÑAS — GASTOS ADS</h2>
+      </div>
+      <div class="metrics-row three-col">
+        <div class="metric">
+          <span class="metric-label">TikTok Ads</span>
+          <span class="metric-value currency" id="gasto_tiktok_ads">$—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Google Ads</span>
+          <span class="metric-value currency" id="gasto_google_ads">$—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Meta Ads</span>
+          <span class="metric-value currency" id="gasto_meta_ads">$—</span>
+        </div>
+      </div>
+      <div class="metrics-row two-col" style="margin-top: 15px;">
+        <div class="metric total-gasto" style="background: #E8F0FE;">
+          <span class="metric-label">Subtotal Ads</span>
+          <span class="metric-value currency" id="gasto_subtotal_ads" style="font-size: 20px;">$—</span>
+        </div>
+        <div class="metric total-gasto" style="background: #FFF8E1;">
+          <span class="metric-label">Total Gasto Inversión</span>
+          <span class="metric-value currency large" id="gasto_inversion_total" style="color: #d93025;">$—</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon teal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+        <h2 class="card-title">HERRAMIENTAS</h2>
+      </div>
+      <div class="metrics-row">
+        <div class="metric">
+          <span class="metric-label">Mailchimp</span>
+          <span class="metric-value currency" id="gasto_mailchimp">$—</span>
+        </div>
+      </div>
+      <div class="chart-wrap small-chart">
+        <canvas id="chartGastos"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TENDENCIA MENSUAL ===== -->
+  <section class="card full-card">
+    <div class="card-header">
+      <div class="card-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <h2 class="card-title">TENDENCIA MENSUAL</h2>
+    </div>
+    <div class="chart-wrap tall-chart">
+      <canvas id="chartTendencia"></canvas>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== REGISTER MODAL (Ingresar Datos) ===== -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal modal-large">
+    <button class="modal-close" id="closeRegister">&times;</button>
+    <h2 class="modal-title">Registrar Datos</h2>
+    <p class="modal-subtitle" id="registerSubtitle">EHS — Marzo 2026</p>
+
+    <div class="form-tabs" id="formTabs">
+      <button class="form-tab active" data-tab="seo">🌐 Web SEO</button>
+      <button class="form-tab" data-tab="social">📱 Redes Sociales</button>
+      <button class="form-tab" data-tab="conversiones">🎯 Conversiones</button>
+      <button class="form-tab" data-tab="campanas">💰 Campañas</button>
+      <button class="form-tab" data-tab="retargeting">📧 Retargeting</button>
+    </div>
+
+    <!-- Tab: Web SEO -->
+    <div class="form-panel active" id="tab-seo">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Impresiones Orgánicas</label>
+          <input type="number" id="f_web_impresiones_organicas" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Impresiones Publicidad (Ads)</label>
+          <input type="number" id="f_web_impresiones_ads" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Visitas Orgánicas</label>
+          <input type="number" id="f_web_visitas_organicas" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Visitas Publicidad (Ads)</label>
+          <input type="number" id="f_web_visitas_ads" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Formularios Enviados</label>
+          <input type="number" id="f_web_formularios" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Posición Promedio Google</label>
+          <input type="number" step="0.1" id="f_web_posicion_google" class="form-input" placeholder="0.0" />
+        </div>
+        <div class="form-group full-span">
+          <label>Páginas más visitadas (separadas por coma)</label>
+          <input type="text" id="f_web_paginas_top" class="form-input" placeholder="/inicio, /servicios, /contacto" />
+        </div>
+        <h3 class="full-span" style="margin-top:1rem;font-size:1rem;border-bottom:1px solid #eee;padding-bottom:0.5rem;">Tráfico desde UTM (Clics a la Web)</h3>
+        <div class="form-group">
+          <label>UTM Instagram</label>
+          <input type="number" id="f_web_utm_ig" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>UTM Facebook</label>
+          <input type="number" id="f_web_utm_fb" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>UTM TikTok</label>
+          <input type="number" id="f_web_utm_tt" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>UTM YouTube</label>
+          <input type="number" id="f_web_utm_yt" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>UTM LinkedIn</label>
+          <input type="number" id="f_web_utm_li" class="form-input" placeholder="0" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Redes Sociales -->
+    <div class="form-panel" id="tab-social">
+      <div class="social-form-tabs" id="socialFormTabs">
+        <button class="sf-tab active" data-snet="ig">Instagram</button>
+        <button class="sf-tab" data-snet="fb">Facebook</button>
+        <button class="sf-tab" data-snet="tt">TikTok</button>
+        <button class="sf-tab" data-snet="yt">YouTube</button>
+        <button class="sf-tab" data-snet="li">LinkedIn</button>
+      </div>
+      <div class="form-grid" id="socialFormGrid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- Tab: Conversiones -->
+    <div class="form-panel" id="tab-conversiones">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>WhatsApp Enviados</label>
+          <input type="number" id="f_conv_whatsapp" class="form-input conv-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Llamadas Realizadas</label>
+          <input type="number" id="f_conv_llamadas" class="form-input conv-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Correos Enviados (Conv)</label>
+          <input type="number" id="f_conv_correos" class="form-input conv-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Contactos Totales (Auto)</label>
+          <input type="number" id="f_conv_suma_contactos" class="form-input" placeholder="0" readonly style="background: #eee;" />
+        </div>
+        <div class="form-group">
+          <label>Cotizaciones Hechas</label>
+          <input type="number" id="f_conv_cotizaciones" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group" style="display: none;">
+          <input type="number" id="f_conversiones_totales" value="0" /> <!-- Legacy sync -->
+        </div>
+        <div class="form-group">
+          <label>Ingresos Totales ($)</label>
+          <input type="number" id="f_ventas_totales" class="form-input" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Ticket Promedio ($)</label>
+          <input type="number" id="f_ticket_promedio" class="form-input" placeholder="0.00" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Campañas -->
+    <div class="form-panel" id="tab-campanas">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Gasto TikTok Ads ($)</label>
+          <input type="number" id="f_gasto_tiktok_ads" class="form-input" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Gasto Google Ads ($)</label>
+          <input type="number" id="f_gasto_google_ads" class="form-input" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Gasto Meta Ads ($)</label>
+          <input type="number" id="f_gasto_meta_ads" class="form-input" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Gasto Mailchimp ($)</label>
+          <input type="number" id="f_gasto_mailchimp" class="form-input" placeholder="0.00" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Retargeting -->
+    <div class="form-panel" id="tab-retargeting">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Correos Enviados</label>
+          <input type="number" id="f_retargeting_correos" class="form-input" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Tasa de Apertura (%)</label>
+          <input type="number" step="0.1" id="f_retargeting_apertura" class="form-input" placeholder="0.0" />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelRegister">Cancelar</button>
+      <button class="btn-primary" id="submitRegister">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar Datos
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COMPARE MODAL ===== -->
+<div class="modal-overlay" id="compareModal">
+  <div class="modal modal-large">
+    <button class="modal-close" id="closeCompare">&times;</button>
+    <h2 class="modal-title">Comparar Períodos</h2>
+    <div class="compare-selectors">
+      <div class="form-group">
+        <label>Período A</label>
+        <select id="compareA" class="form-input"></select>
+      </div>
+      <span class="compare-vs">VS</span>
+      <div class="form-group">
+        <label>Período B</label>
+        <select id="compareB" class="form-input"></select>
+      </div>
+    </div>
+    <div class="chart-wrap tall-chart">
+      <canvas id="chartCompare"></canvas>
+    </div>
+    <div class="compare-table" id="compareTable"></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

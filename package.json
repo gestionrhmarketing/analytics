@@ -1,0 +1,16 @@
+{
+  "name": "digital-insights",
+  "version": "1.0.0",
+  "description": "App de registro de reportes web y redes sociales",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "cors": "^2.8.5"
+  }
+}

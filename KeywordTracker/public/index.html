@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO Keyword Tracker</title>
+  <meta name="description" content="Rastreo de Posicionamiento de Palabras Clave SEO" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .keyword-pill {
+      background: #fff;
+      color: #3c4043;
+      border: 1px solid #dadce0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .keyword-pill:hover {
+      background: #f8f9fa;
+    }
+    .keyword-pill.active {
+      background: #e8f0fe;
+      color: #1a73e8;
+      border-color: #1a73e8;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+  <div class="navbar-left">
+    <div class="company-tabs" id="companyTabs">
+      <button class="company-tab active" data-company="EHS" id="tab-EHS">
+        <img src="https://ui-avatars.com/api/?name=EHS&background=1A73E8&color=fff&size=24&rounded=true&bold=true" alt="EHS" class="tab-logo" />
+        <span>EHS</span>
+      </button>
+      <button class="company-tab" data-company="GESTIONRH" id="tab-GESTIONRH">
+        <img src="https://ui-avatars.com/api/?name=GRH&background=E8430A&color=fff&size=24&rounded=true&bold=true" alt="GRH" class="tab-logo" />
+        <span>GESTIONRH</span>
+      </button>
+      <button class="company-tab" data-company="ACADEMYGRH" id="tab-ACADEMYGRH">
+        <img src="https://ui-avatars.com/api/?name=AG&background=0DA855&color=fff&size=24&rounded=true&bold=true" alt="AGH" class="tab-logo" />
+        <span>ACADEMYGRH</span>
+      </button>
+    </div>
+  </div>
+  <div class="navbar-right">
+    <button class="btn-login" id="btnAddKeyword">
+       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle; display:inline-block;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Agregar Nueva Keyword
+    </button>
+  </div>
+</nav>
+
+<div class="subbar" style="justify-content: flex-start; gap: 0.5rem; flex-wrap: wrap; padding: 10px 20px;" id="keywordTabs">
+  <!-- Dynamic keyword tabs go here -->
+</div>
+
+<main class="main-content" id="reportContent" style="padding-top: 1rem;">
+  <div class="company-banner" id="companyBanner">
+    <div class="banner-logo-wrap">
+      <img id="bannerLogo" src="https://ui-avatars.com/api/?name=EHS&background=fff&color=1A73E8&size=48&bold=true" alt="Logo" />
+    </div>
+    <div style="flex:1;">
+       <h1 id="bannerName">EHS INTEGRAL</h1>
+       <h2 style="font-size: 1.2rem; font-weight: 400; color: #5F6368; margin-top: 5px;" id="currentKeywordLabel">Keywords Tracker</h2>
+    </div>
+  </div>
+
+  <section class="card full-card" id="chartSection" style="display: none; margin-top: 2rem;">
+    <div class="card-header">
+      <div class="card-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <h2 class="card-title">EVOLUCIÓN EN GOOGLE (<span id="subtitleKeyword"></span>)</h2>
+    </div>
+    <div class="chart-wrap tall-chart" style="height: 350px;">
+      <canvas id="chartKeyword"></canvas>
+    </div>
+    
+    <div style="margin-top: 2.5rem;">
+      <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #3c4043; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px;">Historial de Posiciones</h3>
+      <div style="overflow-x: auto; background: #fff; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid #e0e0e0; background: #f8f9fa;">
+              <th style="padding: 12px 16px; color: #5f6368; font-weight: 600;">Fecha</th>
+              <th style="padding: 12px 16px; color: #5f6368; font-weight: 600;">Posición</th>
+              <th style="padding: 12px 16px; color: #5f6368; font-weight: 600; text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  
+  <div id="emptyState" style="text-align: center; padding: 5rem 2rem; color: #5f6368; background: #fff; border-radius: 12px; border: 1px dashed #dadce0; margin-top: 2rem;">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#dadce0" stroke-width="1.5" style="margin-bottom: 1rem;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <h3 style="font-size: 1.5rem; color: #3c4043; margin-bottom: 0.5rem;">Aún no hay datos para mostrar</h3>
+    <p>Agrega la primera búsqueda para comenzar a trackear esta empresa.</p>
+    <button class="btn-primary" style="margin-top: 1.5rem;" onclick="document.getElementById('btnAddKeyword').click()">Agregar Palabra Clave</button>
+  </div>
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="keywordModal">
+  <div class="modal">
+    <button class="modal-close" id="closeKeywordModal">&times;</button>
+    <h2 class="modal-title">Registrar Posición SEO</h2>
+    <p class="modal-subtitle" id="modalSubtitle">EHS</p>
+
+    <div class="form-grid" style="grid-template-columns: 1fr; gap: 1.5rem;">
+      <div class="form-group full-span">
+        <label>Palabra Clave (Busqueda real)</label>
+        <input type="text" id="f_keyword" class="form-input" placeholder="Ej. curso de montacargas precio" />
+        <small style="color: #5f6368; font-size: 0.8rem; margin-top: 6px; display: block;">Escríbela exactamente igual en el futuro para que se agrupen los datos.</small>
+      </div>
+      <div class="form-group full-span">
+         <label>Fecha del registro</label>
+         <input type="text" id="f_fecha" class="form-input" placeholder="Ej. 15-03-2026" />
+      </div>
+      <div class="form-group full-span">
+         <label>Posición en Google</label>
+         <input type="number" id="f_posicion" class="form-input" placeholder="1" />
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top: 2.5rem;">
+      <button class="btn-secondary" id="cancelKeywordModal">Cancelar</button>
+      <button class="btn-primary" id="saveKeywordRecord">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar Registro
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
