@@ -3,12 +3,25 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin
-const serviceAccount = require('./firebase-key.json');
+// Initialize Firebase Admin (Safe for deployment)
+let serviceAccount;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+if (process.env.FIREBASE_CONFIG) {
+  // If we are on a server (Heroku, Render, etc.) we use the environment variable
+  serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+} else if (fs.existsSync(path.join(__dirname, 'firebase-key.json'))) {
+  // Local development
+  serviceAccount = require('./firebase-key.json');
+}
+
+if (serviceAccount) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  console.log('✅ Firebase Admin Initialized');
+} else {
+  console.error('❌ ERROR: No se encontró configuración de Firebase. Asegúrate de tener firebase-key.json o configurar FIREBASE_CONFIG.');
+}
 
 const db = admin.firestore();
 const app = express();
