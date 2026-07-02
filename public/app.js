@@ -2,21 +2,15 @@
 const COMPANIES = {
   EHS: {
     name: 'EHS INTEGRAL',
-    logoUrl: 'https://ui-avatars.com/api/?name=EHS&background=fff&color=1A73E8&size=48&bold=true',
-    thumbUrl: 'https://ui-avatars.com/api/?name=EHS&background=1A73E8&color=fff&size=24&rounded=true&bold=true',
+    logoUrl: '/ehs_logo.png',
+    thumbUrl: '/ehs_icon.png',
     color: '#1A73E8'
   },
   GESTIONRH: {
     name: 'GESTIONRH',
-    logoUrl: 'https://ui-avatars.com/api/?name=GRH&background=fff&color=E8430A&size=48&bold=true',
-    thumbUrl: 'https://ui-avatars.com/api/?name=GRH&background=E8430A&color=fff&size=24&rounded=true&bold=true',
+    logoUrl: '/gestionrh_logo.png',
+    thumbUrl: '/gestionrh_icon.png',
     color: '#E8430A'
-  },
-  ACADEMYGRH: {
-    name: 'ACADEMYGRH',
-    logoUrl: 'https://ui-avatars.com/api/?name=AG&background=fff&color=0DA855&size=48&bold=true',
-    thumbUrl: 'https://ui-avatars.com/api/?name=AG&background=0DA855&color=fff&size=24&rounded=true&bold=true',
-    color: '#0DA855'
   }
 };
 
@@ -84,6 +78,20 @@ function getCurrentRecord() {
   return allData.find(r => r.empresa === activeCompany && r.periodo === getPeriodKey()) || {};
 }
 
+function getPreviousPeriodKey() {
+  let m = activePeriod.month - 1;
+  let y = activePeriod.year;
+  if (m < 0) {
+    m = 11;
+    y--;
+  }
+  return `${String(m + 1).padStart(2,'0')}-${y}`;
+}
+
+function getPreviousRecord() {
+  return allData.find(r => r.empresa === activeCompany && r.periodo === getPreviousPeriodKey()) || {};
+}
+
 function getRecordsForCompany() {
   return allData.filter(r => r.empresa === activeCompany).sort((a, b) => {
     const [am, ay] = a.periodo.split('-').map(Number);
@@ -148,8 +156,68 @@ function renderDashboard() {
 
 function updateBanner() {
   const c = COMPANIES[activeCompany];
-  document.getElementById('bannerName').textContent = c.name;
-  document.getElementById('bannerLogo').src = c.logoUrl;
+  const logoEl = document.getElementById('bannerLogo');
+  const nameEl = document.getElementById('bannerName');
+  const bannerEl = document.getElementById('companyBanner');
+  const logoWrapEl = logoEl.parentElement;
+
+  // Restore defaults
+  bannerEl.style.background = '';
+  bannerEl.style.boxShadow = '';
+  logoWrapEl.style.display = '';
+  logoWrapEl.style.width = '';
+  logoWrapEl.style.height = '';
+  logoWrapEl.style.background = '';
+  logoWrapEl.style.border = '';
+  logoEl.style.width = '';
+  logoEl.style.height = '';
+  logoEl.style.borderRadius = '';
+  nameEl.style.display = '';
+
+  logoEl.src = c.logoUrl;
+  nameEl.textContent = c.name;
+
+  if (activeCompany === 'EHS') {
+    // EHS has a wide logo containing the text, so we hide the text h1 and adjust logo container
+    nameEl.style.display = 'none'; // hide "EHS INTEGRAL" text
+    
+    // Style the banner to match EHS's brand
+    bannerEl.style.background = '#104b9e'; 
+    bannerEl.style.boxShadow = '0 8px 32px rgba(16,75,158,.35)';
+    
+    // Style the logo wrapper to display the wide image nicely
+    logoWrapEl.style.background = 'transparent';
+    logoWrapEl.style.border = 'none';
+    logoWrapEl.style.width = 'auto';
+    logoWrapEl.style.height = '64px';
+    
+    logoEl.style.width = 'auto';
+    logoEl.style.height = '100%';
+    logoEl.style.borderRadius = '0';
+  } else if (activeCompany === 'GESTIONRH') {
+    // GESTIONRH has a wide logo containing the text, so we hide the text h1 and adjust logo container
+    nameEl.style.display = 'none';
+    
+    // Style the banner to match GESTIONRH's brand color
+    bannerEl.style.background = '#E12122';
+    bannerEl.style.boxShadow = '0 8px 32px rgba(225,33,34,.35)';
+    
+    logoWrapEl.style.background = 'transparent';
+    logoWrapEl.style.border = 'none';
+    logoWrapEl.style.width = 'auto';
+    logoWrapEl.style.height = '64px';
+    
+    logoEl.style.width = 'auto';
+    logoEl.style.height = '100%';
+    logoEl.style.borderRadius = '0';
+  } else {
+    // Other companies (ACADEMYGRH) can keep their original styling
+    if (activeCompany === 'ACADEMYGRH') {
+      bannerEl.style.background = 'linear-gradient(135deg, #0DA855 0%, #087038 100%)';
+      bannerEl.style.boxShadow = '0 8px 32px rgba(13,168,85,.35)';
+    }
+  }
+
   document.querySelectorAll('.company-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.company === activeCompany);
   });
@@ -171,6 +239,53 @@ function renderWebSEO(rec) {
   setVal('web_impresiones_ads', fmt(webAds));
   setVal('web_formularios', fmt(rec.web_formularios));
   setVal('web_posicion_google', rec.web_posicion_google ? `#${rec.web_posicion_google}` : '—');
+
+  // De dónde nos vieron
+  setVal('ref_google', fmt(rec.ref_google));
+  setVal('ref_redes', fmt(rec.ref_redes));
+  setVal('ref_ia', fmt(rec.ref_ia));
+  setVal('ref_recomendacion', fmt(rec.ref_recomendacion));
+  setVal('ref_linkedin', fmt(rec.ref_linkedin));
+  setVal('ref_cliente', fmt(rec.ref_cliente));
+  setVal('ref_otro_valor', fmt(rec.ref_otro_valor));
+  const otroNombreEl = document.getElementById('ref_otro_nombre');
+  if (otroNombreEl) otroNombreEl.textContent = rec.ref_otro_nombre || 'Ninguno';
+
+  const compPosEl = document.getElementById('web_posicion_google_comp');
+  if (compPosEl) {
+    const prevRec = getPreviousRecord();
+    const curPos = parseFloat(rec.web_posicion_google);
+    const prevPos = parseFloat(prevRec.web_posicion_google);
+    if (!isNaN(curPos) && !isNaN(prevPos) && curPos > 0 && prevPos > 0) {
+      const diff = prevPos - curPos; // E.g. 10 (prev) - 8 (cur) = +2 (improvement of 2 spots)
+      const pct = ((diff / prevPos) * 100).toFixed(1);
+      const sign = diff > 0 ? '+' : '';
+      const color = diff > 0 ? '#0D8A43' : (diff < 0 ? '#D93025' : '#757575');
+      compPosEl.innerHTML = `Mes ant: <strong>#${prevPos}</strong> (<span style="color: ${color}; font-weight: bold;">${sign}${pct}%</span>)`;
+    } else if (!isNaN(prevPos) && prevPos > 0) {
+      compPosEl.innerHTML = `Mes ant: <strong>#${prevPos}</strong>`;
+    } else {
+      compPosEl.innerHTML = '';
+    }
+  }
+
+  const compFormEl = document.getElementById('web_formularios_comp');
+  if (compFormEl) {
+    const prevRec = getPreviousRecord();
+    const curForm = parseFloat(rec.web_formularios) || 0;
+    const prevForm = parseFloat(prevRec.web_formularios) || 0;
+    if (curForm > 0 && prevForm > 0) {
+      const diff = curForm - prevForm;
+      const pct = ((diff / prevForm) * 100).toFixed(1);
+      const sign = diff >= 0 ? '+' : '';
+      const color = diff >= 0 ? '#0D8A43' : '#D93025';
+      compFormEl.innerHTML = `Mes ant: <strong>${prevForm.toLocaleString('es-MX')}</strong> (<span style="color: ${color}; font-weight: bold;">${sign}${pct}%</span>)`;
+    } else if (prevForm > 0) {
+      compFormEl.innerHTML = `Mes ant: <strong>${prevForm.toLocaleString('es-MX')}</strong>`;
+    } else {
+      compFormEl.innerHTML = '';
+    }
+  }
 
   const pagesEl = document.getElementById('web_paginas_top');
   if (pagesEl) {
@@ -236,6 +351,28 @@ function renderGlobalInteraccionesTotal(rec) {
   if (document.getElementById('global_seguidores_totales')) {
     document.getElementById('global_seguidores_totales').textContent = totalSocialFollowers.toLocaleString();
   }
+
+  // Global followers comparison
+  const compEl = document.getElementById('global_seguidores_comp');
+  if (compEl) {
+    const prevRec = getPreviousRecord();
+    let prevSocialFollowers = 0;
+    ['ig','fb','tt','yt','li'].forEach(net => {
+      prevSocialFollowers += (parseFloat(prevRec[`${net}_seguidores`]) || 0);
+    });
+
+    if (totalSocialFollowers > 0 && prevSocialFollowers > 0) {
+      const diff = totalSocialFollowers - prevSocialFollowers;
+      const pct = ((diff / prevSocialFollowers) * 100).toFixed(1);
+      const sign = diff >= 0 ? '+' : '';
+      const color = diff >= 0 ? '#69F0AE' : '#FF8A80';
+      compEl.innerHTML = `Mes ant: <strong>${prevSocialFollowers.toLocaleString('es-MX')}</strong> (<span style="color: ${color}; font-weight: bold;">${sign}${pct}%</span>)`;
+    } else if (prevSocialFollowers > 0) {
+      compEl.innerHTML = `Mes ant: <strong>${prevSocialFollowers.toLocaleString('es-MX')}</strong>`;
+    } else {
+      compEl.innerHTML = '';
+    }
+  }
 }
 
 function renderSocialImpresiones(rec) {
@@ -270,6 +407,7 @@ function renderWebInteraccion(rec) {
 
 function renderSocialInteracciones(rec) {
   let socialTotal = 0;
+  const prevRec = getPreviousRecord();
   ['ig','fb','tt','yt','li'].forEach(net => {
     const org = parseFloat(rec[`${net}_interacciones_organicas`]) || 0;
     const ads = parseFloat(rec[`${net}_interacciones_ads`]) || 0;
@@ -295,6 +433,24 @@ function renderSocialInteracciones(rec) {
     setVal(`${net}_guardados`, fmt(legacySaves));
     setVal(`${net}_clics`, fmt(legacyClics));
     setVal(`${net}_seguidores`, fmt(rec[`${net}_seguidores`]));
+
+    // Followers comparison for this platform
+    const compEl = document.getElementById(`${net}_seguidores_comp`);
+    if (compEl) {
+      const curFollowers = parseFloat(rec[`${net}_seguidores`]) || 0;
+      const prevFollowers = parseFloat(prevRec[`${net}_seguidores`]) || 0;
+      if (curFollowers > 0 && prevFollowers > 0) {
+        const diff = curFollowers - prevFollowers;
+        const pct = ((diff / prevFollowers) * 100).toFixed(1);
+        const sign = diff >= 0 ? '+' : '';
+        const color = diff >= 0 ? '#0D8A43' : '#D93025'; // Green (mexican/google green) or Red
+        compEl.innerHTML = `Mes ant: <strong>${prevFollowers.toLocaleString('es-MX')}</strong> (<span style="color: ${color}; font-weight: bold;">${sign}${pct}%</span>)`;
+      } else if (prevFollowers > 0) {
+        compEl.innerHTML = `Mes ant: <strong>${prevFollowers.toLocaleString('es-MX')}</strong>`;
+      } else {
+        compEl.innerHTML = '';
+      }
+    }
   });
   setVal('social_interacciones_totales', fmt(socialTotal));
 }
@@ -312,7 +468,7 @@ function renderConversiones(rec) {
   setVal('conv_whatsapp', fmt(rec.conv_whatsapp));
   setVal('conv_llamadas', fmt(rec.conv_llamadas));
   setVal('conv_correos', fmt(rec.conv_correos));
-  setVal('conv_cotizaciones', fmt(rec.conv_cotizaciones));
+  setVal('conv_cotizaciones', fmt(totalContactos));
 }
 
 function renderCampanas(rec) {
@@ -521,7 +677,91 @@ function renderChartTendencia() {
 }
 
 // ===== COMPARE CHART =====
+let compareType = 'month'; // 'month' or 'quarter'
 let compareState = { periodA: null, periodB: null, selectedIndex: null };
+
+function getQuarterLabel(key) {
+  if (!key) return '';
+  const [q, y] = key.split('-');
+  const range = q === 'Q1' ? 'Ene-Mar' : q === 'Q2' ? 'Abr-Jun' : q === 'Q3' ? 'Jul-Sep' : 'Oct-Dic';
+  return `${q} ${y} (${range})`;
+}
+
+function getQuarterRecords(quarterKey) {
+  const [qStr, yStr] = quarterKey.split('-');
+  const q = parseInt(qStr.replace('Q', ''));
+  const y = parseInt(yStr);
+  const months = [
+    `${String((q - 1) * 3 + 1).padStart(2,'0')}-${y}`,
+    `${String((q - 1) * 3 + 2).padStart(2,'0')}-${y}`,
+    `${String((q - 1) * 3 + 3).padStart(2,'0')}-${y}`
+  ];
+  return allData.filter(r => r.empresa === activeCompany && months.includes(r.periodo));
+}
+
+function aggregateRecords(records) {
+  if (records.length === 0) return {};
+  
+  const sorted = [...records].sort((a, b) => {
+    const am = parseInt(a.periodo.split('-')[0]);
+    const bm = parseInt(b.periodo.split('-')[0]);
+    return am - bm;
+  });
+  
+  const aggregated = {};
+  const avgFields = ['web_posicion_google', 'retargeting_apertura'];
+  const snapshotFields = ['ig_seguidores', 'fb_seguidores', 'tt_seguidores', 'yt_seguidores', 'li_seguidores'];
+  
+  sorted.forEach(rec => {
+    Object.keys(rec).forEach(key => {
+      if (key === 'empresa' || key === 'periodo') {
+        aggregated[key] = rec[key];
+        return;
+      }
+      
+      if (snapshotFields.some(f => key.endsWith(f) || key === f)) {
+        if (rec[key] !== undefined && rec[key] !== '') {
+          aggregated[key] = rec[key];
+        }
+        return;
+      }
+      
+      const val = parseFloat(rec[key]);
+      if (!isNaN(val)) {
+        if (avgFields.includes(key)) {
+          if (!aggregated[key]) aggregated[key] = { sum: 0, count: 0 };
+          aggregated[key].sum += val;
+          aggregated[key].count += 1;
+        } else {
+          aggregated[key] = (aggregated[key] || 0) + val;
+        }
+      } else {
+        if (rec[key]) {
+          aggregated[key] = (aggregated[key] ? aggregated[key] + ', ' : '') + rec[key];
+        }
+      }
+    });
+  });
+  
+  avgFields.forEach(key => {
+    if (aggregated[key] && aggregated[key].count > 0) {
+      aggregated[key] = (aggregated[key].sum / aggregated[key].count).toFixed(1);
+    } else {
+      aggregated[key] = undefined;
+    }
+  });
+  
+  return aggregated;
+}
+
+if (!window.compareGroupsOpen) {
+  window.compareGroupsOpen = { referrals_parent: false };
+}
+
+function toggleCompareGroup(groupId) {
+  window.compareGroupsOpen[groupId] = !window.compareGroupsOpen[groupId];
+  renderCompareUI();
+}
 
 function toggleCompareMetric(idx) {
   if (compareState.selectedIndex === idx) {
@@ -543,8 +783,19 @@ function renderCompareUI() {
   const { periodA, periodB, selectedIndex } = compareState;
   destroyChart('chartCompare');
 
-  const recA = allData.find(r => r.empresa === activeCompany && r.periodo === periodA) || {};
-  const recB = allData.find(r => r.empresa === activeCompany && r.periodo === periodB) || {};
+  let recA, recB;
+  let labelA, labelB;
+  if (compareType === 'month') {
+    recA = allData.find(r => r.empresa === activeCompany && r.periodo === periodA) || {};
+    recB = allData.find(r => r.empresa === activeCompany && r.periodo === periodB) || {};
+    labelA = getPeriodLabel(periodA);
+    labelB = getPeriodLabel(periodB);
+  } else {
+    recA = aggregateRecords(getQuarterRecords(periodA));
+    recB = aggregateRecords(getQuarterRecords(periodB));
+    labelA = getQuarterLabel(periodA);
+    labelB = getQuarterLabel(periodB);
+  }
 
   const getSocialImp = (r) => ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_impresiones_organicas`]) || 0) + (parseFloat(r[`${net}_impresiones_ads`]) || 0), 0);
   const getWebVisits = (r) => (parseFloat(r.web_visitas_organicas) || 0) + (parseFloat(r.web_visitas_ads) || 0) || parseFloat(r.web_visitas) || 0;
@@ -556,18 +807,48 @@ function renderCompareUI() {
   const getTotalInv = (r) => ['tiktok_ads', 'google_ads', 'meta_ads', 'mailchimp'].reduce((s, k) => s + (parseFloat(r[`gasto_${k}`]) || 0), 0);
 
   const metrics = [
+    // 1. Visibilidad y Atracción
     { label: 'Impresiones Web', val: r => (parseFloat(r.web_impresiones_organicas) || 0) + (parseFloat(r.web_impresiones_ads) || 0) },
     { label: 'Imp. Redes Sociales', val: r => getSocialImp(r) },
+    
+    // 2. Tráfico e Interacción
     { label: 'Visitas Web', val: r => getWebVisits(r) },
     { label: 'Interacción Total', val: r => getWebVisits(r) + getSocialInt(r) },
+    { label: 'Formularios Enviados', val: r => parseFloat(r.web_formularios) || 0 },
+    
+    // 3. Atribución / Origen
+    { 
+      label: 'De dónde nos vieron (Total)', 
+      val: r => (parseFloat(r.ref_google)||0) + (parseFloat(r.ref_redes)||0) + (parseFloat(r.ref_ia)||0) + (parseFloat(r.ref_recomendacion)||0) + (parseFloat(r.ref_linkedin)||0) + (parseFloat(r.ref_cliente)||0) + (parseFloat(r.ref_otro_valor)||0),
+      isParent: true,
+      id: 'referrals_parent'
+    },
+    { label: '↳ Google', val: r => parseFloat(r.ref_google) || 0, parentId: 'referrals_parent' },
+    { label: '↳ Redes Sociales', val: r => parseFloat(r.ref_redes) || 0, parentId: 'referrals_parent' },
+    { label: '↳ IA', val: r => parseFloat(r.ref_ia) || 0, parentId: 'referrals_parent' },
+    { label: '↳ Recomendación', val: r => parseFloat(r.ref_recomendacion) || 0, parentId: 'referrals_parent' },
+    { label: '↳ LinkedIn', val: r => parseFloat(r.ref_linkedin) || 0, parentId: 'referrals_parent' },
+    { label: '↳ Cliente', val: r => parseFloat(r.ref_cliente) || 0, parentId: 'referrals_parent' },
+    { 
+      label: '↳ Otro', 
+      val: r => parseFloat(r.ref_otro_valor) || 0, 
+      parentId: 'referrals_parent',
+      getLabel: r => `↳ Otro (${r.ref_otro_nombre || 'Ninguno'})`
+    },
+    
+    // 4. Contactos y Conversiones
+    { label: 'Correos Enviados', val: r => parseFloat(r.conv_correos) || 0 },
+    { label: 'Contactos Totales', val: r => (parseFloat(r.conv_whatsapp) || 0) + (parseFloat(r.conv_llamadas) || 0) + (parseFloat(r.conv_correos) || 0) },
     { label: 'Conversiones Totales', val: r => parseFloat(r.conversiones_totales) || 0 },
+    
+    // 5. Negocio y Finanzas
     { label: 'Ingresos Totales', val: r => parseFloat(r.ventas_totales) || 0, isCurrency: true },
     { label: 'Gasto de Inversión', val: r => getTotalInv(r), isCurrency: true }
   ];
 
-  let displayMetrics = selectedIndex !== null ? [metrics[selectedIndex]] : metrics;
+  let displayMetrics = selectedIndex !== null ? [metrics[selectedIndex]] : metrics.filter(m => !m.parentId);
 
-  const labels = displayMetrics.map(m => m.label);
+  const labels = displayMetrics.map(m => m.getLabel ? m.getLabel(recA).replace('↳ ', '') : m.label);
   const dataA = displayMetrics.map(m => m.val(recA));
   const dataB = displayMetrics.map(m => m.val(recB));
 
@@ -578,8 +859,8 @@ function renderCompareUI() {
       data: {
         labels,
         datasets: [
-          { label: getPeriodLabel(periodA), data: dataA, backgroundColor: '#1A73E8CC', borderRadius: 6 },
-          { label: getPeriodLabel(periodB), data: dataB, backgroundColor: '#0F9D58CC', borderRadius: 6 }
+          { label: labelA, data: dataA, backgroundColor: '#1A73E8CC', borderRadius: 6 },
+          { label: labelB, data: dataB, backgroundColor: '#0F9D58CC', borderRadius: 6 }
         ]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#F0F2F5' } }, x: { grid: { display: false } } } }
@@ -588,7 +869,11 @@ function renderCompareUI() {
 
   // Table
   const table = document.getElementById('compareTable');
-  const rows = metrics.map((m, idx) => {
+  const rows = [];
+  metrics.forEach((m, idx) => {
+    if (m.parentId && !window.compareGroupsOpen[m.parentId]) {
+      return;
+    }
     const a = m.val(recA);
     const b = m.val(recB);
     const diff = b - a;
@@ -599,10 +884,25 @@ function renderCompareUI() {
     const diffStr = m.isCurrency ? '$' + Math.abs(diff).toLocaleString('es-MX') : Math.abs(diff).toLocaleString('es-MX');
     
     const rowClass = selectedIndex === idx ? 'clickable-row selected-row' : 'clickable-row';
-    return `<tr onclick="toggleCompareMetric(${idx})" class="${rowClass}"><td>${m.label}</td><td>${fmt(a)}</td><td>${fmt(b)}</td><td class="${colorCls}">${arrow} ${diffStr} (${pct}%)</td></tr>`;
-  }).join('');
+    
+    let labelContent = m.getLabel ? m.getLabel(recA) : m.label;
+    if (m.isParent) {
+      const isOpen = window.compareGroupsOpen[m.id];
+      const arrowIcon = isOpen ? '▼' : '▶';
+      labelContent = `<span onclick="event.stopPropagation(); toggleCompareGroup('${m.id}')" style="cursor: pointer; margin-right: 6px; user-select: none; font-size: 0.9em; display: inline-block;">${arrowIcon}</span> <strong>${labelContent}</strong>`;
+    } else if (m.parentId) {
+      labelContent = `<span style="display: inline-block; width: 16px;"></span>${labelContent}`;
+    }
+    
+    rows.push(`<tr onclick="toggleCompareMetric(${idx})" class="${rowClass}">
+      <td>${labelContent}</td>
+      <td>${fmt(a)}</td>
+      <td>${fmt(b)}</td>
+      <td class="${colorCls}">${arrow} ${diffStr} (${pct}%)</td>
+    </tr>`);
+  });
   
-  table.innerHTML = `<table><thead><tr><th>Métrica</th><th>${getPeriodLabel(periodA)}</th><th>${getPeriodLabel(periodB)}</th><th>Cambio</th></tr></thead><tbody>${rows}</tbody></table>`;
+  table.innerHTML = `<table><thead><tr><th>Métrica</th><th>${labelA}</th><th>${labelB}</th><th>Cambio</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
 // ===== BIND EVENTS =====
@@ -670,6 +970,21 @@ function bindEvents() {
   document.getElementById('compareA').addEventListener('change', triggerCompare);
   document.getElementById('compareB').addEventListener('change', triggerCompare);
 
+  document.getElementById('btnCompareTypeMonth').addEventListener('click', () => {
+    compareType = 'month';
+    document.getElementById('btnCompareTypeMonth').classList.add('active');
+    document.getElementById('btnCompareTypeQuarter').classList.remove('active');
+    populateCompareSelectors();
+    triggerCompare();
+  });
+  document.getElementById('btnCompareTypeQuarter').addEventListener('click', () => {
+    compareType = 'quarter';
+    document.getElementById('btnCompareTypeQuarter').classList.add('active');
+    document.getElementById('btnCompareTypeMonth').classList.remove('active');
+    populateCompareSelectors();
+    triggerCompare();
+  });
+
   // PDF
   document.getElementById('btnPdf').addEventListener('click', handlePDF);
 
@@ -697,13 +1012,29 @@ function openRegisterModal() {
 
   // Pre-fill with existing data
   const rec = getCurrentRecord();
-  const webFields = ['web_impresiones_organicas','web_impresiones_ads','web_visitas','web_visitas_organicas','web_visitas_ads','web_formularios','web_posicion_google','web_paginas_top','web_utm_ig','web_utm_fb','web_utm_tt','web_utm_yt','web_utm_li'];
-  webFields.forEach(f => { const el = document.getElementById(`f_${f}`); if (el && rec[f] !== undefined) el.value = rec[f]; });
-  ['conversiones_totales','ventas_totales','ticket_promedio','conv_whatsapp','conv_llamadas','conv_correos','conv_cotizaciones','conv_suma_contactos'].forEach(f => {
-    const el = document.getElementById(`f_${f}`); if (el && rec[f] !== undefined) el.value = rec[f];
+  
+  const webFields = ['web_impresiones_organicas','web_impresiones_ads','web_visitas','web_visitas_organicas','web_visitas_ads','web_formularios','web_posicion_google','web_paginas_top','web_utm_ig','web_utm_fb','web_utm_tt','web_utm_yt','web_utm_li','ref_google','ref_redes','ref_ia','ref_recomendacion','ref_linkedin','ref_cliente','ref_otro_nombre','ref_otro_valor'];
+  webFields.forEach(f => { 
+    const el = document.getElementById(`f_${f}`); 
+    if (el) el.value = rec[f] !== undefined ? rec[f] : ''; 
   });
-  ['gasto_tiktok_ads','gasto_google_ads','gasto_meta_ads','gasto_mailchimp'].forEach(f => {
-    const el = document.getElementById(`f_${f}`); if (el && rec[f]) el.value = rec[f];
+  
+  const convFields = ['conversiones_totales','ventas_totales','ticket_promedio','conv_whatsapp','conv_llamadas','conv_correos','conv_suma_contactos'];
+  convFields.forEach(f => {
+    const el = document.getElementById(`f_${f}`); 
+    if (el) el.value = rec[f] !== undefined ? rec[f] : '';
+  });
+  
+  const gastoFields = ['gasto_tiktok_ads','gasto_google_ads','gasto_meta_ads','gasto_mailchimp'];
+  gastoFields.forEach(f => {
+    const el = document.getElementById(`f_${f}`); 
+    if (el) el.value = rec[f] !== undefined ? rec[f] : '';
+  });
+
+  const retargetingFields = ['retargeting_correos', 'retargeting_apertura'];
+  retargetingFields.forEach(f => {
+    const el = document.getElementById(`f_${f}`); 
+    if (el) el.value = rec[f] !== undefined ? rec[f] : '';
   });
 
   activeSocialFormNet = 'ig';
@@ -780,13 +1111,21 @@ function handleSubmitRegister() {
     web_utm_tt: getNum('f_web_utm_tt'),
     web_utm_yt: getNum('f_web_utm_yt'),
     web_utm_li: getNum('f_web_utm_li'),
+    ref_google: getNum('f_ref_google'),
+    ref_redes: getNum('f_ref_redes'),
+    ref_ia: getNum('f_ref_ia'),
+    ref_recomendacion: getNum('f_ref_recomendacion'),
+    ref_linkedin: getNum('f_ref_linkedin'),
+    ref_cliente: getNum('f_ref_cliente'),
+    ref_otro_nombre: getStr('f_ref_otro_nombre'),
+    ref_otro_valor: getNum('f_ref_otro_valor'),
     conversiones_totales: getNum('f_conversiones_totales'),
     ventas_totales: getNum('f_ventas_totales'),
     ticket_promedio: getNum('f_ticket_promedio'),
     conv_whatsapp: getNum('f_conv_whatsapp'),
     conv_llamadas: getNum('f_conv_llamadas'),
     conv_correos: getNum('f_conv_correos'),
-    conv_cotizaciones: getNum('f_conv_cotizaciones'),
+    conv_cotizaciones: getNum('f_conv_suma_contactos'),
     conv_suma_contactos: getNum('f_conv_suma_contactos'),
     gasto_tiktok_ads: getNum('f_gasto_tiktok_ads'),
     gasto_google_ads: getNum('f_gasto_google_ads'),
@@ -811,15 +1150,53 @@ function openCompareModal() {
   const records = getRecordsForCompany();
   if (records.length < 1) { showToast('No hay datos suficientes para comparar', 'error'); return; }
 
-  const selA = document.getElementById('compareA');
-  const selB = document.getElementById('compareB');
-  const options = records.map(r => `<option value="${r.periodo}">${getPeriodLabel(r.periodo)}</option>`).join('');
-  selA.innerHTML = options;
-  selB.innerHTML = options;
-  if (records.length > 1) selB.selectedIndex = 1;
+  // Default comparison to monthly when opening modal
+  compareType = 'month';
+  document.getElementById('btnCompareTypeMonth').classList.add('active');
+  document.getElementById('btnCompareTypeQuarter').classList.remove('active');
 
+  populateCompareSelectors();
   openModal('compareModal');
   triggerCompare();
+}
+
+function populateCompareSelectors() {
+  const selA = document.getElementById('compareA');
+  const selB = document.getElementById('compareB');
+  const records = getRecordsForCompany();
+  
+  if (compareType === 'month') {
+    document.getElementById('compareLabelA').textContent = 'Mes A';
+    document.getElementById('compareLabelB').textContent = 'Mes B';
+    const options = records.map(r => `<option value="${r.periodo}">${getPeriodLabel(r.periodo)}</option>`).join('');
+    selA.innerHTML = options;
+    selB.innerHTML = options;
+    if (records.length > 1) selB.selectedIndex = 1;
+  } else {
+    document.getElementById('compareLabelA').textContent = 'Trimestre A';
+    document.getElementById('compareLabelB').textContent = 'Trimestre B';
+    
+    // Group unique quarters from company records
+    const quartersSet = new Set();
+    records.forEach(r => {
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      const q = Math.ceil(m / 3);
+      quartersSet.add(`Q${q}-${y}`);
+    });
+    
+    const quarters = Array.from(quartersSet).sort((a, b) => {
+      const [aq, ay] = a.split('-').map(s => parseInt(s.replace('Q','')));
+      const [bq, by] = b.split('-').map(s => parseInt(s.replace('Q','')));
+      return (ay * 4 + aq) - (by * 4 + bq);
+    });
+    
+    const options = quarters.map(qKey => `<option value="${qKey}">${getQuarterLabel(qKey)}</option>`).join('');
+    selA.innerHTML = options;
+    selB.innerHTML = options;
+    if (quarters.length > 1) selB.selectedIndex = 1;
+  }
 }
 
 function triggerCompare() {
