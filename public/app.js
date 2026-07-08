@@ -32,13 +32,52 @@ let activePeriod = { month: new Date().getMonth(), year: new Date().getFullYear(
 let activeSocialNet = 'ig';
 let activeSocialFormNet = 'ig';
 let charts = {};
+let irmpCompareType = 'month';
+let growthCompareType = 'month';
+let activitiesCompareType = 'month';
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
-  initPeriod();
-  await loadData();
-  renderDashboard();
-  bindEvents();
+  // Bind Login Form Event
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      const errorDiv = document.getElementById('loginError');
+
+      if (user === 'Admin' && pass === '4dm1n2026$') {
+        localStorage.setItem('di_logged_in', 'true');
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        showToast('🔓 Acceso concedido', 'success');
+        
+        // Inicializar datos una vez autenticado
+        initPeriod();
+        await loadData();
+        renderDashboard();
+        bindEvents();
+      } else {
+        errorDiv.style.display = 'block';
+        document.getElementById('loginPass').value = '';
+      }
+    });
+  }
+
+  // Verificar estado de sesión guardado
+  if (localStorage.getItem('di_logged_in') === 'true') {
+    if (document.getElementById('loginOverlay')) {
+      document.getElementById('loginOverlay').style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+    initPeriod();
+    await loadData();
+    renderDashboard();
+    bindEvents();
+  } else {
+    document.body.style.overflow = 'hidden';
+  }
 });
 
 // ===== PERIOD =====
@@ -66,9 +105,14 @@ function getPeriodLabel(key) {
 async function loadData() {
   try {
     const res = await fetch('/api/data');
+    if (!res.ok) {
+      throw new Error('No se pudo obtener datos del servidor');
+    }
     allData = await res.json();
+    // Guardar una copia local actualizada
+    localStorage.setItem('di_data', JSON.stringify(allData));
   } catch (e) {
-    console.warn('No se pudo cargar datos del servidor. Usando localStorage.');
+    console.warn('No se pudo cargar datos del servidor. Usando localStorage.', e);
     const local = localStorage.getItem('di_data');
     allData = local ? JSON.parse(local) : [];
   }
@@ -109,6 +153,9 @@ async function saveRecord(data) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(record)
     });
+    if (!res.ok) {
+      throw new Error('Error al guardar en el servidor');
+    }
     const json = await res.json();
     if (json.success) {
       // Update local state
@@ -120,6 +167,8 @@ async function saveRecord(data) {
       setStatusSaved();
       showToast('✅ Datos guardados correctamente', 'success');
       renderDashboard();
+    } else {
+      throw new Error(json.message || 'Respuesta negativa del servidor');
     }
   } catch (e) {
     // Fallback: save to localStorage only
@@ -463,6 +512,7 @@ function renderConversiones(rec) {
   
   setVal('conv_suma_contactos', fmt(totalContactos));
   setVal('conversiones_totales', rec.conversiones_totales ? Number(rec.conversiones_totales).toLocaleString('es-MX') : '0');
+  setVal('conversiones_campana', rec.conversiones_campana ? Number(rec.conversiones_campana).toLocaleString('es-MX') : '0');
   setVal('ventas_totales', rec.ventas_totales ? '$' + Number(rec.ventas_totales).toLocaleString('es-MX') : '$—');
   setVal('ticket_promedio', rec.ticket_promedio ? '$' + Number(rec.ticket_promedio).toLocaleString('es-MX') : '$—');
   setVal('conv_whatsapp', fmt(rec.conv_whatsapp));
@@ -755,7 +805,7 @@ function aggregateRecords(records) {
 }
 
 if (!window.compareGroupsOpen) {
-  window.compareGroupsOpen = { referrals_parent: false };
+  window.compareGroupsOpen = { referrals_parent: false, followers_parent: false };
 }
 
 function toggleCompareGroup(groupId) {
@@ -804,6 +854,7 @@ function renderCompareUI() {
     let legacy = (parseFloat(r[`${net}_likes`]) || 0) + (parseFloat(r[`${net}_comentarios`]) || 0) + (parseFloat(r[`${net}_compartidos`]) || 0) + (parseFloat(r[`${net}_guardados`]) || 0) + (parseFloat(r[`${net}_clics`]) || 0);
     return sum + (orgAds > 0 ? orgAds : legacy);
   }, 0);
+  const getSocialFollowers = (r) => ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_seguidores`]) || 0), 0);
   const getTotalInv = (r) => ['tiktok_ads', 'google_ads', 'meta_ads', 'mailchimp'].reduce((s, k) => s + (parseFloat(r[`gasto_${k}`]) || 0), 0);
 
   const metrics = [
@@ -815,6 +866,17 @@ function renderCompareUI() {
     { label: 'Visitas Web', val: r => getWebVisits(r) },
     { label: 'Interacción Total', val: r => getWebVisits(r) + getSocialInt(r) },
     { label: 'Formularios Enviados', val: r => parseFloat(r.web_formularios) || 0 },
+    { 
+      label: 'Seguidores Redes Sociales (Total)', 
+      val: r => getSocialFollowers(r),
+      isParent: true,
+      id: 'followers_parent'
+    },
+    { label: '↳ Instagram', val: r => parseFloat(r.ig_seguidores) || 0, parentId: 'followers_parent' },
+    { label: '↳ Facebook', val: r => parseFloat(r.fb_seguidores) || 0, parentId: 'followers_parent' },
+    { label: '↳ TikTok', val: r => parseFloat(r.tt_seguidores) || 0, parentId: 'followers_parent' },
+    { label: '↳ YouTube', val: r => parseFloat(r.yt_seguidores) || 0, parentId: 'followers_parent' },
+    { label: '↳ LinkedIn', val: r => parseFloat(r.li_seguidores) || 0, parentId: 'followers_parent' },
     
     // 3. Atribución / Origen
     { 
@@ -840,6 +902,7 @@ function renderCompareUI() {
     { label: 'Correos Enviados', val: r => parseFloat(r.conv_correos) || 0 },
     { label: 'Contactos Totales', val: r => (parseFloat(r.conv_whatsapp) || 0) + (parseFloat(r.conv_llamadas) || 0) + (parseFloat(r.conv_correos) || 0) },
     { label: 'Conversiones Totales', val: r => parseFloat(r.conversiones_totales) || 0 },
+    { label: 'Conversiones de Campaña', val: r => parseFloat(r.conversiones_campana) || 0 },
     
     // 5. Negocio y Finanzas
     { label: 'Ingresos Totales', val: r => parseFloat(r.ventas_totales) || 0, isCurrency: true },
@@ -988,6 +1051,83 @@ function bindEvents() {
   // PDF
   document.getElementById('btnPdf').addEventListener('click', handlePDF);
 
+  // IRMP
+  document.getElementById('btnIrmp').addEventListener('click', openIrmpModal);
+  document.getElementById('closeIrmp').addEventListener('click', () => closeModal('irmpModal'));
+  document.getElementById('irmpPeriodSelect').addEventListener('change', triggerIrmpCompare);
+  document.getElementById('btnIrmpTypeMonth').addEventListener('click', () => {
+    irmpCompareType = 'month';
+    document.getElementById('btnIrmpTypeMonth').classList.add('active');
+    document.getElementById('btnIrmpTypeQuarter').classList.remove('active');
+    populateIrmpCompareSelectors();
+    triggerIrmpCompare();
+  });
+  document.getElementById('btnIrmpTypeQuarter').addEventListener('click', () => {
+    irmpCompareType = 'quarter';
+    document.getElementById('btnIrmpTypeQuarter').classList.add('active');
+    document.getElementById('btnIrmpTypeMonth').classList.remove('active');
+    populateIrmpCompareSelectors();
+    triggerIrmpCompare();
+  });
+
+  // GROWTH
+  document.getElementById('btnGrowth').addEventListener('click', openGrowthModal);
+  document.getElementById('closeGrowth').addEventListener('click', () => closeModal('growthModal'));
+  document.getElementById('growthPeriodSelect').addEventListener('change', triggerGrowthCompare);
+  document.getElementById('btnGrowthTypeMonth').addEventListener('click', () => {
+    growthCompareType = 'month';
+    document.getElementById('btnGrowthTypeMonth').classList.add('active');
+    document.getElementById('btnGrowthTypeQuarter').classList.remove('active');
+    populateGrowthCompareSelectors();
+    triggerGrowthCompare();
+  });
+  document.getElementById('btnGrowthTypeQuarter').addEventListener('click', () => {
+    growthCompareType = 'quarter';
+    document.getElementById('btnGrowthTypeQuarter').classList.add('active');
+    document.getElementById('btnGrowthTypeMonth').classList.remove('active');
+    populateGrowthCompareSelectors();
+    triggerGrowthCompare();
+  });
+
+  // ACTIVITIES
+  document.getElementById('btnActivities').addEventListener('click', openActivitiesModal);
+  document.getElementById('closeActivities').addEventListener('click', () => closeModal('activitiesModal'));
+  document.getElementById('activitiesPeriodSelect').addEventListener('change', triggerActivitiesChange);
+
+  const activitiesButtons = [
+    { id: 'btnActivitiesTypeMonth', type: 'month' },
+    { id: 'btnActivitiesTypeBimonth', type: 'bimonth' },
+    { id: 'btnActivitiesTypeQuarter', type: 'quarter' },
+    { id: 'btnActivitiesTypeAnnual', type: 'annual' }
+  ];
+
+  activitiesButtons.forEach(btn => {
+    document.getElementById(btn.id).addEventListener('click', () => {
+      activitiesCompareType = btn.type;
+      activitiesButtons.forEach(b => {
+        document.getElementById(b.id).classList.toggle('active', b.id === btn.id);
+      });
+      populateActivitiesCompareSelectors();
+      triggerActivitiesChange();
+    });
+  });
+
+  document.getElementById('btnShowAddActivity').addEventListener('click', () => {
+    editingActivityIndex = null;
+    document.getElementById('activityFormHeader').textContent = 'Nueva Actividad';
+    document.getElementById('btnSaveActivity').textContent = 'Guardar';
+    document.getElementById('f_act_nombre').value = '';
+    document.getElementById('f_act_veces').value = '1';
+    document.getElementById('activityFormContainer').style.display = 'block';
+  });
+  document.getElementById('btnCancelActivity').addEventListener('click', () => {
+    editingActivityIndex = null;
+    document.getElementById('activityFormContainer').style.display = 'none';
+    document.getElementById('f_act_nombre').value = '';
+    document.getElementById('f_act_veces').value = '1';
+  });
+  document.getElementById('btnSaveActivity').addEventListener('click', saveNewActivity);
+
   // Auto-calculate conversions
   document.querySelectorAll('.conv-input').forEach(input => {
     input.addEventListener('input', () => {
@@ -1019,7 +1159,7 @@ function openRegisterModal() {
     if (el) el.value = rec[f] !== undefined ? rec[f] : ''; 
   });
   
-  const convFields = ['conversiones_totales','ventas_totales','ticket_promedio','conv_whatsapp','conv_llamadas','conv_correos','conv_suma_contactos'];
+  const convFields = ['conversiones_campana','conversiones_totales','ventas_totales','ticket_promedio','conv_whatsapp','conv_llamadas','conv_correos','conv_suma_contactos'];
   convFields.forEach(f => {
     const el = document.getElementById(`f_${f}`); 
     if (el) el.value = rec[f] !== undefined ? rec[f] : '';
@@ -1120,6 +1260,7 @@ function handleSubmitRegister() {
     ref_otro_nombre: getStr('f_ref_otro_nombre'),
     ref_otro_valor: getNum('f_ref_otro_valor'),
     conversiones_totales: getNum('f_conversiones_totales'),
+    conversiones_campana: getNum('f_conversiones_campana'),
     ventas_totales: getNum('f_ventas_totales'),
     ticket_promedio: getNum('f_ticket_promedio'),
     conv_whatsapp: getNum('f_conv_whatsapp'),
@@ -1211,21 +1352,23 @@ async function handlePDF() {
   const { jsPDF } = window.jspdf;
   const element = document.getElementById('reportContent');
   try {
-    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#F0F2F5' });
+    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#F0F2F5' });
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = canvas.width;
-    const imgH = canvas.height;
-    const ratio = imgW / imgH;
-    let w = pageW - 20, h = w / ratio;
-    if (h > pageH - 20) { h = pageH - 20; w = h * ratio; }
-    pdf.addImage(imgData, 'PNG', 10, 10, w, h);
+    
+    // Create a PDF with custom size that matches the canvas exactly to prevent empty white space and scaling issues
+    const pdf = new jsPDF({
+      orientation: canvas.width > canvas.height ? 'l' : 'p',
+      unit: 'px',
+      format: [canvas.width, canvas.height]
+    });
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    
     const fileName = `${COMPANIES[activeCompany].name.replace(/ /g,'_')}_${MONTHS_ES[activePeriod.month]}_${activePeriod.year}.pdf`;
     pdf.save(fileName);
     showToast('✅ PDF descargado', 'success');
   } catch (e) {
+    console.error(e);
     showToast('Error al generar PDF', 'error');
   }
 }
@@ -1255,3 +1398,757 @@ function showToast(msg, type = '') {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ===== IRMP LOGIC =====
+function calculateIRMP(rec, records) {
+  if (!rec || !records || records.length === 0) return { score: 0, atr: 0, int: 0, conv: 0 };
+
+  const getMax = (getter) => {
+    const vals = records.map(getter);
+    return Math.max(...vals, 1);
+  };
+
+  const getWebImp = r => (parseFloat(r.web_impresiones_organicas) || 0) + (parseFloat(r.web_impresiones_ads) || 0);
+  const getSocialImp = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_impresiones_organicas`]) || 0) + (parseFloat(r[`${net}_impresiones_ads`]) || 0), 0);
+  const getWebVisits = r => (parseFloat(r.web_visitas_organicas) || 0) + (parseFloat(r.web_visitas_ads) || 0) || parseFloat(r.web_visitas) || 0;
+  const getSocialInt = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => {
+    let orgAds = (parseFloat(r[`${net}_interacciones_organicas`]) || 0) + (parseFloat(r[`${net}_interacciones_ads`]) || 0);
+    let legacy = (parseFloat(r[`${net}_likes`]) || 0) + (parseFloat(r[`${net}_comentarios`]) || 0) + (parseFloat(r[`${net}_compartidos`]) || 0) + (parseFloat(r[`${net}_guardados`]) || 0) + (parseFloat(r[`${net}_clics`]) || 0);
+    return sum + (orgAds > 0 ? orgAds : legacy);
+  }, 0);
+  const getTotalContactos = r => (parseFloat(r.conv_whatsapp) || 0) + (parseFloat(r.conv_llamadas) || 0) + (parseFloat(r.conv_correos) || 0);
+  const getConvCamp = r => parseFloat(r.conversiones_campana) || 0;
+  const getVentas = r => parseFloat(r.ventas_totales) || 0;
+
+  const maxWebImp = getMax(getWebImp);
+  const maxSocialImp = getMax(getSocialImp);
+  const maxWebVisits = getMax(getWebVisits);
+  const maxSocialInt = getMax(getSocialInt);
+  const maxContactos = getMax(getTotalContactos);
+  const maxConvCamp = getMax(getConvCamp);
+  const maxVentas = getMax(getVentas);
+
+  const scoreWebImp = (getWebImp(rec) / maxWebImp) * 100;
+  const scoreSocialImp = (getSocialImp(rec) / maxSocialImp) * 100;
+  const atr = Math.min(100, (scoreWebImp + scoreSocialImp) / 2);
+
+  const scoreVisits = (getWebVisits(rec) / maxWebVisits) * 100;
+  const scoreSocialInt = (getSocialInt(rec) / maxSocialInt) * 100;
+  const scoreContactos = (getTotalContactos(rec) / maxContactos) * 100;
+  const int = Math.min(100, (scoreVisits + scoreSocialInt + scoreContactos) / 3);
+
+  const scoreConvCamp = (getConvCamp(rec) / maxConvCamp) * 100;
+  const scoreVentas = (getVentas(rec) / maxVentas) * 100;
+  const conv = Math.min(100, (scoreConvCamp + scoreVentas) / 2);
+
+  const score = (atr * 0.2) + (int * 0.3) + (conv * 0.5);
+  return {
+    score: Math.round(score),
+    atr: Math.round(atr),
+    int: Math.round(int),
+    conv: Math.round(conv)
+  };
+}
+
+function openIrmpModal() {
+  irmpCompareType = 'month';
+  document.getElementById('btnIrmpTypeMonth').classList.add('active');
+  document.getElementById('btnIrmpTypeQuarter').classList.remove('active');
+
+  populateIrmpCompareSelectors();
+  triggerIrmpCompare();
+  openModal('irmpModal');
+}
+
+function populateIrmpCompareSelectors() {
+  const sel = document.getElementById('irmpPeriodSelect');
+  const records = getRecordsForCompany();
+  
+  if (irmpCompareType === 'month') {
+    document.getElementById('irmpLabelSelect').textContent = 'Seleccionar Mes:';
+    const options = records.map(r => `<option value="${r.periodo}">${getPeriodLabel(r.periodo)}</option>`).join('');
+    sel.innerHTML = options;
+    if (records.length > 0) {
+      const activeIdx = records.findIndex(r => r.periodo === getPeriodKey());
+      sel.selectedIndex = activeIdx >= 0 ? activeIdx : records.length - 1;
+    }
+  } else {
+    document.getElementById('irmpLabelSelect').textContent = 'Seleccionar Trimestre:';
+    
+    const quartersSet = new Set();
+    records.forEach(r => {
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      const q = Math.ceil(m / 3);
+      quartersSet.add(`Q${q}-${y}`);
+    });
+    
+    const quarters = Array.from(quartersSet).sort((a, b) => {
+      const [aq, ay] = a.split('-').map(s => parseInt(s.replace('Q','')));
+      const [bq, by] = b.split('-').map(s => parseInt(s.replace('Q','')));
+      return (ay * 4 + aq) - (by * 4 + bq);
+    });
+    
+    const options = quarters.map(qKey => `<option value="${qKey}">${getQuarterLabel(qKey)}</option>`).join('');
+    sel.innerHTML = options;
+    if (quarters.length > 0) {
+      sel.selectedIndex = quarters.length - 1;
+    }
+  }
+}
+
+function triggerIrmpCompare() {
+  const selectedPeriod = document.getElementById('irmpPeriodSelect').value;
+  if (selectedPeriod) renderIrmpSingle(selectedPeriod);
+}
+
+function renderIrmpSingle(period) {
+  const records = getRecordsForCompany();
+  let rec;
+  let label;
+
+  if (irmpCompareType === 'month') {
+    rec = records.find(r => r.periodo === period) || {};
+    label = getPeriodLabel(period);
+  } else {
+    rec = aggregateRecords(getQuarterRecords(period));
+    label = getQuarterLabel(period);
+  }
+
+  // Get metrics & maximums to calculate score & display details
+  const getWebImp = r => (parseFloat(r.web_impresiones_organicas) || 0) + (parseFloat(r.web_impresiones_ads) || 0);
+  const getSocialImp = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_impresiones_organicas`]) || 0) + (parseFloat(r[`${net}_impresiones_ads`]) || 0), 0);
+  const getWebVisits = r => (parseFloat(r.web_visitas_organicas) || 0) + (parseFloat(r.web_visitas_ads) || 0) || parseFloat(r.web_visitas) || 0;
+  const getSocialInt = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => {
+    let orgAds = (parseFloat(r[`${net}_interacciones_organicas`]) || 0) + (parseFloat(r[`${net}_interacciones_ads`]) || 0);
+    let legacy = (parseFloat(r[`${net}_likes`]) || 0) + (parseFloat(r[`${net}_comentarios`]) || 0) + (parseFloat(r[`${net}_compartidos`]) || 0) + (parseFloat(r[`${net}_guardados`]) || 0) + (parseFloat(r[`${net}_clics`]) || 0);
+    return sum + (orgAds > 0 ? orgAds : legacy);
+  }, 0);
+  const getTotalContactos = r => (parseFloat(r.conv_whatsapp) || 0) + (parseFloat(r.conv_llamadas) || 0) + (parseFloat(r.conv_correos) || 0);
+  const getConvCamp = r => parseFloat(r.conversiones_campana) || 0;
+  const getVentas = r => parseFloat(r.ventas_totales) || 0;
+
+  const getMax = (getter) => {
+    const vals = records.map(getter);
+    return Math.max(...vals, 1);
+  };
+
+  const maxWebImp = getMax(getWebImp);
+  const maxSocialImp = getMax(getSocialImp);
+  const maxWebVisits = getMax(getWebVisits);
+  const maxSocialInt = getMax(getSocialInt);
+  const maxContactos = getMax(getTotalContactos);
+  const maxConvCamp = getMax(getConvCamp);
+  const maxVentas = getMax(getVentas);
+
+  const irmp = calculateIRMP(rec, records);
+
+  // Update Main Gauge
+  document.getElementById('irmpValueSingle').textContent = irmp.score + '%';
+  document.getElementById('irmpGaugeSingle').style.background = `conic-gradient(#8b5cf6 0% ${irmp.score}%, #e2e8f0 ${irmp.score}% 100%)`;
+
+  let ratingLabel = '';
+  let desc = '';
+  if (irmp.score >= 80) {
+    ratingLabel = '🚀 Rendimiento Excelente';
+    desc = `El rendimiento general de marketing para ${label} está cerca de sus máximos históricos de la empresa. Las conversiones y la atracción están alineadas con los objetivos más altos.`;
+  } else if (irmp.score >= 50) {
+    ratingLabel = '📈 Rendimiento Moderado';
+    desc = `Hay un rendimiento sólido en ${label} en varios pilares, pero existen oportunidades claras para optimizar las conversiones o aumentar la visibilidad.`;
+  } else {
+    ratingLabel = '⚠️ Rendimiento Bajo';
+    desc = `Las métricas clave en ${label} están notablemente por debajo del rendimiento histórico de la empresa. Se recomienda revisar las estrategias de conversión y los canales activos.`;
+  }
+  document.getElementById('irmpLabelSingle').textContent = ratingLabel;
+  document.getElementById('irmpDescSingle').textContent = desc;
+
+  // Render Pillars Breakdown HTML
+  const container = document.getElementById('irmpPillarsContainer');
+  const fmtVal = (val, isCurr) => isCurr ? '$' + val.toLocaleString('es-MX') : val.toLocaleString('es-MX');
+
+  container.innerHTML = `
+    <!-- Atracción (20%) -->
+    <div style="border: 1px solid #ddd6fe; border-radius: 10px; padding: 1rem; background: #f5f3ff;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd6fe; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="font-weight: 700; color: #7c3aed; font-size: 0.9rem;">1. PILAR ATRACCIÓN (Ponderación: 20%)</span>
+        <span style="font-size: 1.1rem; font-weight: 800; color: #6d28d9;">${irmp.atr}%</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: #4b5563;">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Impresiones Web (Orgánicas + Ads):</span>
+          <strong>${fmtVal(getWebImp(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxWebImp)})</span></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Impresiones Redes Sociales:</span>
+          <strong>${fmtVal(getSocialImp(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxSocialImp)})</span></strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interacción (30%) -->
+    <div style="border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem; background: #eff6ff;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="font-weight: 700; color: #2563eb; font-size: 0.9rem;">2. PILAR INTERACCIÓN (Ponderación: 30%)</span>
+        <span style="font-size: 1.1rem; font-weight: 800; color: #1d4ed8;">${irmp.int}%</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: #4b5563;">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Visitas Web Totales:</span>
+          <strong>${fmtVal(getWebVisits(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxWebVisits)})</span></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Interacciones Redes Sociales:</span>
+          <strong>${fmtVal(getSocialInt(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxSocialInt)})</span></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Contactos Totales (WhatsApp + Llamadas + Correo):</span>
+          <strong>${fmtVal(getTotalContactos(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxContactos)})</span></strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversión (50%) -->
+    <div style="border: 1px solid #a7f3d0; border-radius: 10px; padding: 1rem; background: #ecfdf5;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #a7f3d0; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="font-weight: 700; color: #059669; font-size: 0.9rem;">3. PILAR CONVERSIÓN (Ponderación: 50%)</span>
+        <span style="font-size: 1.1rem; font-weight: 800; color: #047857;">${irmp.conv}%</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: #4b5563;">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Conversiones de Campaña:</span>
+          <strong>${fmtVal(getConvCamp(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxConvCamp)})</span></strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Ingresos / Ventas Totales:</span>
+          <strong>${fmtVal(getVentas(rec), true)} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxVentas, true)})</span></strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== GROWTH LOGIC AND MODAL =====
+function openGrowthModal() {
+  growthCompareType = 'month';
+  document.getElementById('btnGrowthTypeMonth').classList.add('active');
+  document.getElementById('btnGrowthTypeQuarter').classList.remove('active');
+
+  populateGrowthCompareSelectors();
+  triggerGrowthCompare();
+  openModal('growthModal');
+}
+
+function populateGrowthCompareSelectors() {
+  const sel = document.getElementById('growthPeriodSelect');
+  const records = getRecordsForCompany();
+  
+  if (growthCompareType === 'month') {
+    document.getElementById('growthLabelSelect').textContent = 'Seleccionar Mes:';
+    const options = records.map(r => `<option value="${r.periodo}">${getPeriodLabel(r.periodo)}</option>`).join('');
+    sel.innerHTML = options;
+    if (records.length > 0) {
+      const activeIdx = records.findIndex(r => r.periodo === getPeriodKey());
+      sel.selectedIndex = activeIdx >= 0 ? activeIdx : records.length - 1;
+    }
+  } else {
+    document.getElementById('growthLabelSelect').textContent = 'Seleccionar Trimestre:';
+    
+    const quartersSet = new Set();
+    records.forEach(r => {
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      const q = Math.ceil(m / 3);
+      quartersSet.add(`Q${q}-${y}`);
+    });
+    
+    const quarters = Array.from(quartersSet).sort((a, b) => {
+      const [aq, ay] = a.split('-').map(s => parseInt(s.replace('Q','')));
+      const [bq, by] = b.split('-').map(s => parseInt(s.replace('Q','')));
+      return (ay * 4 + aq) - (by * 4 + bq);
+    });
+    
+    const options = quarters.map(qKey => `<option value="${qKey}">${getQuarterLabel(qKey)}</option>`).join('');
+    sel.innerHTML = options;
+    if (quarters.length > 0) {
+      sel.selectedIndex = quarters.length - 1;
+    }
+  }
+}
+
+function triggerGrowthCompare() {
+  const selectedPeriod = document.getElementById('growthPeriodSelect').value;
+  if (selectedPeriod) renderGrowthSingle(selectedPeriod);
+}
+
+function renderGrowthSingle(period) {
+  const records = getRecordsForCompany();
+  let rec;
+  let label;
+
+  if (growthCompareType === 'month') {
+    rec = records.find(r => r.periodo === period) || {};
+    label = getPeriodLabel(period);
+  } else {
+    rec = aggregateRecords(getQuarterRecords(period));
+    label = getQuarterLabel(period);
+  }
+
+  // Get metrics
+  const getWebImp = r => (parseFloat(r.web_impresiones_organicas) || 0) + (parseFloat(r.web_impresiones_ads) || 0);
+  const getSocialImp = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_impresiones_organicas`]) || 0) + (parseFloat(r[`${net}_impresiones_ads`]) || 0), 0);
+  const getWebVisits = r => (parseFloat(r.web_visitas_organicas) || 0) + (parseFloat(r.web_visitas_ads) || 0) || parseFloat(r.web_visitas) || 0;
+  const getSocialInt = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => {
+    let orgAds = (parseFloat(r[`${net}_interacciones_organicas`]) || 0) + (parseFloat(r[`${net}_interacciones_ads`]) || 0);
+    let legacy = (parseFloat(r[`${net}_likes`]) || 0) + (parseFloat(r[`${net}_comentarios`]) || 0) + (parseFloat(r[`${net}_compartidos`]) || 0) + (parseFloat(r[`${net}_guardados`]) || 0) + (parseFloat(r[`${net}_clics`]) || 0);
+    return sum + (orgAds > 0 ? orgAds : legacy);
+  }, 0);
+  const getTotalContactos = r => (parseFloat(r.conv_whatsapp) || 0) + (parseFloat(r.conv_llamadas) || 0) + (parseFloat(r.conv_correos) || 0);
+  const getSocialFollowers = r => ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_seguidores`]) || 0), 0);
+  const getConvCamp = r => parseFloat(r.conversiones_campana) || 0;
+  const getVentas = r => parseFloat(r.ventas_totales) || 0;
+
+  // Resolve previous period
+  let prevRec = null;
+  let prevLabel = '';
+  if (growthCompareType === 'month') {
+    const idx = records.findIndex(r => r.periodo === period);
+    prevRec = idx > 0 ? records[idx - 1] : null;
+    prevLabel = prevRec ? getPeriodLabel(prevRec.periodo) : 'Mes anterior';
+  } else {
+    const quartersSet = new Set();
+    records.forEach(r => {
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      const q = Math.ceil(m / 3);
+      quartersSet.add(`Q${q}-${y}`);
+    });
+    const quarters = Array.from(quartersSet).sort((a, b) => {
+      const [aq, ay] = a.split('-').map(s => parseInt(s.replace('Q','')));
+      const [bq, by] = b.split('-').map(s => parseInt(s.replace('Q','')));
+      return (ay * 4 + aq) - (by * 4 + bq);
+    });
+    const qIdx = quarters.indexOf(period);
+    const prevQKey = qIdx > 0 ? quarters[qIdx - 1] : null;
+    prevRec = prevQKey ? aggregateRecords(getQuarterRecords(prevQKey)) : null;
+    prevLabel = prevQKey ? getQuarterLabel(prevQKey) : 'Trimestre anterior';
+  }
+
+  // Calculate Growth per metric and overall average
+  const metricsToCompare = [
+    { label: 'Impresiones Web', getter: getWebImp, isCurrency: false },
+    { label: 'Impresiones Redes Sociales', getter: getSocialImp, isCurrency: false },
+    { label: 'Visitas Web', getter: getWebVisits, isCurrency: false },
+    { label: 'Interacciones Redes Sociales', getter: getSocialInt, isCurrency: false },
+    { label: 'Contactos Totales', getter: getTotalContactos, isCurrency: false },
+    { label: 'Seguidores Redes Sociales', getter: getSocialFollowers, isCurrency: false },
+    { label: 'Conversiones de Campaña', getter: getConvCamp, isCurrency: false },
+    { label: 'Ingresos / Ventas Totales', getter: getVentas, isCurrency: true }
+  ];
+
+  let sumPct = 0;
+  let count = 0;
+  const rows = [];
+
+  metricsToCompare.forEach(m => {
+    const curVal = m.getter(rec);
+    const prevVal = prevRec ? m.getter(prevRec) : 0;
+    
+    let pct = 0;
+    let pctStr = '—';
+    let color = '#64748b';
+    let arrow = '→';
+
+    if (prevRec && prevVal > 0) {
+      pct = ((curVal - prevVal) / prevVal) * 100;
+      sumPct += pct;
+      count++;
+      pctStr = `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`;
+      color = pct > 0 ? '#10b981' : pct < 0 ? '#ef4444' : '#64748b';
+      arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '→';
+    }
+
+    const fmt = (v) => m.isCurrency ? '$' + v.toLocaleString('es-MX') : v.toLocaleString('es-MX');
+
+    rows.push(`
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 0.75rem 0.5rem; font-weight: 500; color: #334155;">${m.label}</td>
+        <td style="padding: 0.75rem 0.5rem;">${prevRec ? fmt(prevVal) : 'N/A'}</td>
+        <td style="padding: 0.75rem 0.5rem;">${fmt(curVal)}</td>
+        <td style="padding: 0.75rem 0.5rem; color: ${color}; font-weight: bold;">${arrow} ${pctStr}</td>
+      </tr>
+    `);
+  });
+
+  const avgGrowth = count > 0 ? sumPct / count : null;
+
+  // Render Box
+  const box = document.getElementById('growthIndicatorBox');
+  const valEl = document.getElementById('averageGrowthValue');
+  const descEl = document.getElementById('averageGrowthDesc');
+
+  if (avgGrowth !== null) {
+    const sign = avgGrowth > 0 ? '+' : '';
+    const color = avgGrowth > 0 ? '#10b981' : avgGrowth < 0 ? '#ef4444' : '#64748b';
+    const textLabel = avgGrowth > 0 ? 'crecieron' : avgGrowth < 0 ? 'decrecieron' : 'se mantuvieron estables';
+    
+    valEl.textContent = `${sign}${avgGrowth.toFixed(1)}%`;
+    valEl.style.color = color;
+    descEl.textContent = `En promedio, tus datos de marketing ${textLabel} un ${Math.abs(avgGrowth).toFixed(1)}% en ${label} en comparación con ${prevLabel}.`;
+    
+    // Background dynamic tint
+    box.style.background = avgGrowth > 0 ? '#f0fdf4' : avgGrowth < 0 ? '#fef2f2' : '#f8fafc';
+    box.style.borderColor = avgGrowth > 0 ? '#bbf7d0' : avgGrowth < 0 ? '#fecaca' : '#e2e8f0';
+  } else {
+    valEl.textContent = 'N/A';
+    valEl.style.color = '#64748b';
+    descEl.textContent = `No hay suficientes datos del período anterior (${prevLabel}) para realizar la comparación.`;
+    box.style.background = '#f8fafc';
+    box.style.borderColor = '#e2e8f0';
+  }
+
+  // Render Table
+  const table = document.getElementById('growthBreakdownTable');
+  table.innerHTML = `
+    <thead>
+      <tr style="border-bottom: 2px solid #e2e8f0; font-weight: bold; color: #1e293b;">
+        <th style="padding: 0.75rem 0.5rem;">Métrica</th>
+        <th style="padding: 0.75rem 0.5rem;">${prevRec ? prevLabel : 'Período Ant.'}</th>
+        <th style="padding: 0.75rem 0.5rem;">${label}</th>
+        <th style="padding: 0.75rem 0.5rem;">Variación MoM</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.join('')}
+    </tbody>
+  `;
+}
+
+// ===== OTHER ACTIVITIES FUNCTIONS =====
+let editingActivityIndex = null;
+
+const DEFAULT_ACTIVITIES = [
+  { actividad: 'Problema de impresora resueltas', veces: 0 },
+  { actividad: 'Problema de servidor/internet resueltas', veces: 0 },
+  { actividad: 'Problema de laptop resueltas', veces: 0 },
+  { actividad: 'Reuniones', veces: 0 }
+];
+
+function getBimonthRecords(bKey) {
+  const [bStr, yStr] = bKey.split('-');
+  const b = parseInt(bStr.replace('B',''));
+  const y = parseInt(yStr);
+  const companyRecords = getRecordsForCompany();
+  const startMonth = (b - 1) * 2 + 1;
+  const endMonth = startMonth + 1;
+  return companyRecords.filter(r => {
+    const [mPart, yPart] = r.periodo.split('-').map(Number);
+    return yPart === y && mPart >= startMonth && mPart <= endMonth;
+  });
+}
+
+function getAnnualRecords(yearStr) {
+  const y = parseInt(yearStr);
+  const companyRecords = getRecordsForCompany();
+  return companyRecords.filter(r => {
+    const [_, yPart] = r.periodo.split('-').map(Number);
+    return yPart === y;
+  });
+}
+
+function getBimonthlyLabel(bKey) {
+  const [bStr, yStr] = bKey.split('-');
+  const b = parseInt(bStr.replace('B',''));
+  const bnames = ['Ene - Feb', 'Mar - Abr', 'May - Jun', 'Jul - Ago', 'Sep - Oct', 'Nov - Dic'];
+  return `${bnames[b - 1]} ${yStr}`;
+}
+
+function openActivitiesModal() {
+  editingActivityIndex = null;
+  document.getElementById('activityFormContainer').style.display = 'none';
+  document.getElementById('f_act_nombre').value = '';
+  document.getElementById('f_act_veces').value = '1';
+
+  activitiesCompareType = 'month';
+  const btns = [
+    { id: 'btnActivitiesTypeMonth', type: 'month' },
+    { id: 'btnActivitiesTypeBimonth', type: 'bimonth' },
+    { id: 'btnActivitiesTypeQuarter', type: 'quarter' },
+    { id: 'btnActivitiesTypeAnnual', type: 'annual' }
+  ];
+  btns.forEach(b => {
+    document.getElementById(b.id).classList.toggle('active', b.type === 'month');
+  });
+
+  populateActivitiesCompareSelectors();
+  triggerActivitiesChange();
+  openModal('activitiesModal');
+}
+
+function populateActivitiesCompareSelectors() {
+  const sel = document.getElementById('activitiesPeriodSelect');
+  const records = getRecordsForCompany();
+  
+  if (activitiesCompareType === 'month') {
+    document.getElementById('activitiesLabelSelect').textContent = 'Seleccionar Mes:';
+    const options = records.map(r => `<option value="${r.periodo}">${getPeriodLabel(r.periodo)}</option>`).join('');
+    sel.innerHTML = options;
+    if (records.length > 0) {
+      const activeIdx = records.findIndex(r => r.periodo === getPeriodKey());
+      sel.selectedIndex = activeIdx >= 0 ? activeIdx : records.length - 1;
+    }
+  } else if (activitiesCompareType === 'bimonth') {
+    document.getElementById('activitiesLabelSelect').textContent = 'Seleccionar Bimestre:';
+    const bimonthsSet = new Set();
+    records.forEach(r => {
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      const b = Math.ceil(m / 2);
+      bimonthsSet.add(`B${b}-${y}`);
+    });
+    const bimonths = Array.from(bimonthsSet).sort((a, b) => {
+      const [ab, ay] = a.split('-').map(s => parseInt(s.replace('B','')));
+      const [bb, by] = b.split('-').map(s => parseInt(s.replace('B','')));
+      return (ay * 6 + ab) - (by * 6 + bb);
+    });
+    sel.innerHTML = bimonths.map(bKey => `<option value="${bKey}">${getBimonthlyLabel(bKey)}</option>`).join('');
+    if (bimonths.length > 0) sel.selectedIndex = bimonths.length - 1;
+  } else if (activitiesCompareType === 'quarter') {
+    document.getElementById('activitiesLabelSelect').textContent = 'Seleccionar Trimestre:';
+    const quartersSet = new Set();
+    records.forEach(r => {
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      const q = Math.ceil(m / 3);
+      quartersSet.add(`Q${q}-${y}`);
+    });
+    const quarters = Array.from(quartersSet).sort((a, b) => {
+      const [aq, ay] = a.split('-').map(s => parseInt(s.replace('Q','')));
+      const [bq, by] = b.split('-').map(s => parseInt(s.replace('Q','')));
+      return (ay * 4 + aq) - (by * 4 + bq);
+    });
+    sel.innerHTML = quarters.map(qKey => `<option value="${qKey}">${getQuarterLabel(qKey)}</option>`).join('');
+    if (quarters.length > 0) sel.selectedIndex = quarters.length - 1;
+  } else {
+    document.getElementById('activitiesLabelSelect').textContent = 'Seleccionar Año:';
+    const yearsSet = new Set();
+    records.forEach(r => {
+      const [_, yStr] = r.periodo.split('-');
+      yearsSet.add(yStr);
+    });
+    const years = Array.from(yearsSet).sort((a, b) => parseInt(a) - parseInt(b));
+    sel.innerHTML = years.map(yKey => `<option value="${yKey}">${yKey}</option>`).join('');
+    if (years.length > 0) sel.selectedIndex = years.length - 1;
+  }
+}
+
+function triggerActivitiesChange() {
+  const selectedPeriod = document.getElementById('activitiesPeriodSelect').value;
+  if (!selectedPeriod) return;
+
+  const companyName = COMPANIES[activeCompany].name;
+  let periodLabelText = '';
+  
+  if (activitiesCompareType === 'month') {
+    periodLabelText = getPeriodLabel(selectedPeriod);
+    document.getElementById('btnShowAddActivity').style.display = 'flex';
+  } else if (activitiesCompareType === 'bimonth') {
+    periodLabelText = getBimonthlyLabel(selectedPeriod);
+    document.getElementById('btnShowAddActivity').style.display = 'none';
+    document.getElementById('activityFormContainer').style.display = 'none';
+  } else if (activitiesCompareType === 'quarter') {
+    periodLabelText = getQuarterLabel(selectedPeriod);
+    document.getElementById('btnShowAddActivity').style.display = 'none';
+    document.getElementById('activityFormContainer').style.display = 'none';
+  } else {
+    periodLabelText = selectedPeriod;
+    document.getElementById('btnShowAddActivity').style.display = 'none';
+    document.getElementById('activityFormContainer').style.display = 'none';
+  }
+
+  document.getElementById('activitiesPeriodTitle').textContent = `Actividades de ${periodLabelText} - ${companyName}`;
+  renderActivitiesList(selectedPeriod);
+}
+
+function renderActivitiesList(selectedPeriod) {
+  let list = [];
+  const records = getRecordsForCompany();
+  
+  if (activitiesCompareType === 'month') {
+    const rec = records.find(r => r.periodo === selectedPeriod) || {};
+    const existingList = rec.otras_actividades || [];
+    
+    // Copy list and establish default activities if not present
+    list = [...existingList];
+    DEFAULT_ACTIVITIES.forEach(def => {
+      const exists = list.some(item => item.actividad.toLowerCase() === def.actividad.toLowerCase());
+      if (!exists) {
+        list.push({ ...def });
+      }
+    });
+  } else {
+    // Aggregation mode: collect and sum all activities from multiple months
+    let periodRecs = [];
+    if (activitiesCompareType === 'bimonth') {
+      periodRecs = getBimonthRecords(selectedPeriod);
+    } else if (activitiesCompareType === 'quarter') {
+      periodRecs = getQuarterRecords(selectedPeriod);
+    } else {
+      periodRecs = getAnnualRecords(selectedPeriod);
+    }
+
+    const activityMap = {};
+    // Pre-populate defaults in map
+    DEFAULT_ACTIVITIES.forEach(def => {
+      activityMap[def.actividad.toLowerCase()] = { actividad: def.actividad, veces: 0 };
+    });
+
+    periodRecs.forEach(r => {
+      const activities = r.otras_actividades || [];
+      activities.forEach(item => {
+        const key = item.actividad.trim().toLowerCase();
+        if (activityMap[key]) {
+          activityMap[key].veces += item.veces;
+        } else {
+          activityMap[key] = { actividad: item.actividad, veces: item.veces };
+        }
+      });
+    });
+    list = Object.values(activityMap);
+  }
+  
+  const tbody = document.getElementById('activitiesListBody');
+  tbody.innerHTML = list.map((item, idx) => `
+    <tr style="border-bottom: 1px solid #f1f5f9;">
+      <td style="padding: 10px 12px; font-weight: 500; color: #334155;">${item.actividad}</td>
+      <td style="padding: 10px 12px; text-align: center; font-weight: 600; color: #1e293b;">${item.veces}</td>
+      <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
+        ${activitiesCompareType === 'month' ? `
+          <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+            <button onclick="editActivity(${idx})" style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center;" title="Editar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button onclick="deleteActivity(${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center;" title="Eliminar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+          </div>
+        ` : `<span style="color: #94a3b8; font-size: 11px;">Consolidado</span>`}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function editActivity(index) {
+  const selectedPeriod = document.getElementById('activitiesPeriodSelect').value;
+  if (!selectedPeriod) return;
+  
+  // Resolve list (same as rendering logic to ensure defaults edit correctly)
+  const records = getRecordsForCompany();
+  const rec = records.find(r => r.periodo === selectedPeriod) || {};
+  const existingList = rec.otras_actividades || [];
+  
+  const list = [...existingList];
+  DEFAULT_ACTIVITIES.forEach(def => {
+    const exists = list.some(item => item.actividad.toLowerCase() === def.actividad.toLowerCase());
+    if (!exists) {
+      list.push({ ...def });
+    }
+  });
+
+  const item = list[index];
+  if (!item) return;
+
+  editingActivityIndex = index;
+  document.getElementById('f_act_nombre').value = item.actividad;
+  document.getElementById('f_act_veces').value = item.veces;
+  
+  document.getElementById('activityFormHeader').textContent = 'Editar Actividad';
+  document.getElementById('btnSaveActivity').textContent = 'Actualizar';
+  document.getElementById('activityFormContainer').style.display = 'block';
+}
+
+async function saveNewActivity() {
+  const nombre = document.getElementById('f_act_nombre').value.trim();
+  const veces = parseInt(document.getElementById('f_act_veces').value) || 0;
+  const selectedPeriod = document.getElementById('activitiesPeriodSelect').value;
+  
+  if (!nombre) {
+    showToast('⚠️ Por favor ingresa el nombre de la actividad', 'error');
+    return;
+  }
+  if (!selectedPeriod) return;
+  
+  const records = getRecordsForCompany();
+  const rec = records.find(r => r.periodo === selectedPeriod) || {};
+  const existingList = rec.otras_actividades || [];
+  
+  const list = [...existingList];
+  DEFAULT_ACTIVITIES.forEach(def => {
+    const exists = list.some(item => item.actividad.toLowerCase() === def.actividad.toLowerCase());
+    if (!exists) {
+      list.push({ ...def });
+    }
+  });
+  
+  if (editingActivityIndex !== null) {
+    list[editingActivityIndex] = { actividad: nombre, veces: veces };
+    editingActivityIndex = null;
+  } else {
+    const existingIdx = list.findIndex(item => item.actividad.toLowerCase() === nombre.toLowerCase());
+    if (existingIdx >= 0) {
+      list[existingIdx].veces += veces;
+    } else {
+      list.push({ actividad: nombre, veces: veces });
+    }
+  }
+  
+  // Temporarily set period to the selected month so it writes correctly
+  const [mStr, yStr] = selectedPeriod.split('-');
+  activePeriod.month = parseInt(mStr) - 1;
+  activePeriod.year = parseInt(yStr);
+
+  await saveRecord({ otras_actividades: list });
+  
+  // Hide form and refresh list
+  document.getElementById('activityFormContainer').style.display = 'none';
+  document.getElementById('f_act_nombre').value = '';
+  document.getElementById('f_act_veces').value = '1';
+  renderActivitiesList(selectedPeriod);
+}
+
+async function deleteActivity(index) {
+  if (!confirm('¿Estás seguro de que deseas eliminar esta actividad?')) return;
+  
+  const selectedPeriod = document.getElementById('activitiesPeriodSelect').value;
+  if (!selectedPeriod) return;
+
+  const records = getRecordsForCompany();
+  const rec = records.find(r => r.periodo === selectedPeriod) || {};
+  const existingList = rec.otras_actividades || [];
+  
+  const list = [...existingList];
+  DEFAULT_ACTIVITIES.forEach(def => {
+    const exists = list.some(item => item.actividad.toLowerCase() === def.actividad.toLowerCase());
+    if (!exists) {
+      list.push({ ...def });
+    }
+  });
+  
+  list.splice(index, 1);
+  
+  // Temporarily set period to the selected month so it writes correctly
+  const [mStr, yStr] = selectedPeriod.split('-');
+  activePeriod.month = parseInt(mStr) - 1;
+  activePeriod.year = parseInt(yStr);
+
+  await saveRecord({ otras_actividades: list });
+  renderActivitiesList(selectedPeriod);
+}
+
+// Bind to window for HTML inline onclick
+window.deleteActivity = deleteActivity;
+window.editActivity = editActivity;
