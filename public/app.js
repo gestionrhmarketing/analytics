@@ -729,6 +729,8 @@ function renderChartTendencia() {
     return subtotalAds + herramientas;
   });
 
+  const ingresosTotales = records.map(r => parseFloat(r.ventas_totales) || 0);
+
   charts['chartTendencia'] = new Chart(ctx, {
     type: 'line',
     data: {
@@ -739,7 +741,8 @@ function renderChartTendencia() {
         { label: 'Conversiones', data: conversiones, borderColor: '#0F9D58', backgroundColor: 'rgba(15,157,88,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#0F9D58' },
         { label: 'Seguidores Totales', data: seguidoresTotales, borderColor: '#FF9800', backgroundColor: 'rgba(255,152,0,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#FF9800' },
         { label: 'Formularios Enviados', data: formularios, borderColor: '#00ACC1', backgroundColor: 'rgba(0,172,193,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#00ACC1' },
-        { label: 'Gasto Inversión ($)', data: gastoInversion, borderColor: '#E53935', backgroundColor: 'rgba(229,57,53,.06)', borderWidth: 2, borderDash: [4, 4], tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#E53935' }
+        { label: 'Gasto Inversión ($)', data: gastoInversion, borderColor: '#E53935', backgroundColor: 'rgba(229,57,53,.06)', borderWidth: 2, borderDash: [4, 4], tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#E53935' },
+        { label: 'Ingresos Totales ($)', data: ingresosTotales, borderColor: '#2E7D32', backgroundColor: 'rgba(46,125,50,.08)', borderWidth: 2.5, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#2E7D32' }
       ]
     },
     options: {
@@ -755,7 +758,7 @@ function renderChartTendencia() {
             label: function(context) {
               const label = context.dataset.label || '';
               const val = context.parsed.y !== null ? context.parsed.y : 0;
-              if (label.includes('Gasto Inversión')) {
+              if (label.includes('Gasto Inversión') || label.includes('Ingresos Totales')) {
                 return `${label}: $${val.toLocaleString('es-MX')}`;
               }
               return `${label}: ${val.toLocaleString('es-MX')}`;
