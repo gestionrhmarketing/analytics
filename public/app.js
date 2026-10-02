@@ -196,7 +196,7 @@ function renderDashboard() {
   renderRetargeting(rec);
   renderChartTendencia();
   renderChartWebImpresiones(rec);
-  renderChartWebUTM(rec);
+  renderChartWebOrigen(rec);
   renderChartSocialImpresiones(rec);
   renderChartWebVisitas(rec);
   renderChartSocialInteracciones(rec);
@@ -575,34 +575,43 @@ function renderChartWebImpresiones(rec) {
   });
 }
 
-function renderChartWebUTM(rec) {
-  destroyChart('chartWebUTM');
-  const ctx = document.getElementById('chartWebUTM');
+function renderChartWebOrigen(rec) {
+  destroyChart('chartWebOrigen');
+  const ctx = document.getElementById('chartWebOrigen');
   if (!ctx) return;
   
+  const otroLabel = (rec.ref_otro_nombre && rec.ref_otro_nombre.trim() !== '' && rec.ref_otro_nombre.toLowerCase() !== 'ninguno')
+    ? rec.ref_otro_nombre
+    : 'Otro';
+
   const data = [
-    parseFloat(rec.web_utm_ig) || 0,
-    parseFloat(rec.web_utm_fb) || 0,
-    parseFloat(rec.web_utm_tt) || 0,
-    parseFloat(rec.web_utm_yt) || 0,
-    parseFloat(rec.web_utm_li) || 0
+    parseFloat(rec.ref_google) || 0,
+    parseFloat(rec.ref_redes) || 0,
+    parseFloat(rec.ref_ia) || 0,
+    parseFloat(rec.ref_recomendacion) || 0,
+    parseFloat(rec.ref_linkedin) || 0,
+    parseFloat(rec.ref_cliente) || 0,
+    parseFloat(rec.ref_otro_valor) || 0
   ];
   
-  charts['chartWebUTM'] = new Chart(ctx, {
+  charts['chartWebOrigen'] = new Chart(ctx, {
     type: 'bar',
     data: { 
-      labels: ['IG', 'FB', 'TikTok', 'YouTube', 'LinkedIn'], 
+      labels: ['Google', 'Redes', 'IA', 'Recomend.', 'LinkedIn', 'Cliente', otroLabel], 
       datasets: [{ 
-        label: 'Clics',
+        label: 'Personas',
         data, 
-        backgroundColor: ['#E1306C', '#1877F2', '#000000', '#FF0000', '#0A66C2'], 
+        backgroundColor: ['#1A73E8', '#FF9800', '#9C27B0', '#4CAF50', '#0A66C2', '#E91E63', '#607D8B'], 
         borderRadius: 4 
       }] 
     },
     options: { 
       responsive: true, maintainAspectRatio: false, 
       plugins: { legend: { display: false } }, 
-      scales: { y: { beginAtZero: true, grid: { color: '#F0F2F5' } }, x: { grid: { display: false } } } 
+      scales: { 
+        y: { beginAtZero: true, grid: { color: '#F0F2F5' } }, 
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
+      } 
     }
   });
 }
@@ -707,21 +716,65 @@ function renderChartTendencia() {
   const visitas = records.map(r => (parseFloat(r.web_visitas_organicas) || 0) + (parseFloat(r.web_visitas_ads) || 0) || parseFloat(r.web_visitas) || 0);
   const impresionesWeb = records.map(r => (parseFloat(r.web_impresiones_organicas) || 0) + (parseFloat(r.web_impresiones_ads) || 0));
   const conversiones = records.map(r => parseFloat(r.conversiones_totales) || 0);
+  
+  const seguidoresTotales = records.map(r => {
+    return ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_seguidores`]) || 0), 0);
+  });
+  
+  const formularios = records.map(r => parseFloat(r.web_formularios) || 0);
+  
+  const gastoInversion = records.map(r => {
+    const subtotalAds = ['tiktok_ads', 'google_ads', 'meta_ads'].reduce((s, k) => s + (parseFloat(r[`gasto_${k}`]) || 0), 0);
+    const herramientas = parseFloat(r.gasto_mailchimp) || 0;
+    return subtotalAds + herramientas;
+  });
 
   charts['chartTendencia'] = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'Visitas Web', data: visitas, borderColor: '#1A73E8', backgroundColor: 'rgba(26,115,232,.08)', borderWidth: 2.5, tension: .4, fill: true, pointRadius: 5, pointBackgroundColor: '#1A73E8' },
-        { label: 'Impresiones Web', data: impresionesWeb, borderColor: '#7B1FA2', backgroundColor: 'rgba(123,31,162,.06)', borderWidth: 2, tension: .4, fill: true, pointRadius: 5, pointBackgroundColor: '#7B1FA2' },
-        { label: 'Conversiones', data: conversiones, borderColor: '#0F9D58', backgroundColor: 'rgba(15,157,88,.06)', borderWidth: 2, tension: .4, fill: true, pointRadius: 5, pointBackgroundColor: '#0F9D58' }
+        { label: 'Visitas Web', data: visitas, borderColor: '#1A73E8', backgroundColor: 'rgba(26,115,232,.08)', borderWidth: 2.5, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#1A73E8' },
+        { label: 'Impresiones Web', data: impresionesWeb, borderColor: '#7B1FA2', backgroundColor: 'rgba(123,31,162,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#7B1FA2' },
+        { label: 'Conversiones', data: conversiones, borderColor: '#0F9D58', backgroundColor: 'rgba(15,157,88,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#0F9D58' },
+        { label: 'Seguidores Totales', data: seguidoresTotales, borderColor: '#FF9800', backgroundColor: 'rgba(255,152,0,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#FF9800' },
+        { label: 'Formularios Enviados', data: formularios, borderColor: '#00ACC1', backgroundColor: 'rgba(0,172,193,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#00ACC1' },
+        { label: 'Gasto Inversión ($)', data: gastoInversion, borderColor: '#E53935', backgroundColor: 'rgba(229,57,53,.06)', borderWidth: 2, borderDash: [4, 4], tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#E53935' }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, padding: 16, boxWidth: 12 } } },
-      scales: { y: { beginAtZero: true, grid: { color: '#F0F2F5' } }, x: { grid: { display: false } } }
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 12, usePointStyle: true }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label || '';
+              const val = context.parsed.y !== null ? context.parsed.y : 0;
+              if (label.includes('Gasto Inversión')) {
+                return `${label}: $${val.toLocaleString('es-MX')}`;
+              }
+              return `${label}: ${val.toLocaleString('es-MX')}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#F0F2F5' },
+          ticks: {
+            callback: function(value) {
+              return value >= 1000 ? (value / 1000) + 'k' : value;
+            }
+          }
+        },
+        x: { grid: { display: false } }
+      }
     }
   });
 }

@@ -14,41 +14,67 @@ if (process.env.FIREBASE_CONFIG) {
   serviceAccount = require('./firebase-key.json');
 }
 
-if (serviceAccount) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-  console.log('✅ Firebase Admin Initialized');
-} else {
-  console.error('❌ ERROR: No se encontró configuración de Firebase. Asegúrate de tener firebase-key.json o configurar FIREBASE_CONFIG.');
+let db = null;
+let reportsRef = null;
+const localDataPath = path.join(__dirname, 'data-local.json');
+
+function getLocalData() {
+  if (fs.existsSync(localDataPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(localDataPath, 'utf8'));
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
 }
 
-const db = admin.firestore();
+function saveLocalData(data) {
+  fs.writeFileSync(localDataPath, JSON.stringify(data, null, 2), 'utf8');
+}
+
+if (serviceAccount) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    db = admin.firestore();
+    reportsRef = db.collection('reports');
+    console.log('✅ Firebase Admin Initialized');
+  } catch (err) {
+    console.error('❌ Error initializing Firebase Admin:', err.message);
+  }
+} else {
+  console.warn('⚠️ AVISO: No se encontró configuración de Firebase. Se usará almacenamiento local (data-local.json).');
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Reference to Firestore collection
-const reportsRef = db.collection('reports');
-
-// GET all data from Firestore
+// GET all data
 app.get('/api/data', async (req, res) => {
   try {
-    const snapshot = await reportsRef.get();
-    const results = [];
-    snapshot.forEach(doc => {
-      results.push(doc.data());
-    });
-    res.json(results);
+    if (reportsRef) {
+      const snapshot = await reportsRef.get();
+      const results = [];
+      snapshot.forEach(doc => {
+        results.push(doc.data());
+      });
+      return res.json(results);
+    } else {
+      const localData = getLocalData();
+      return res.json(localData);
+    }
   } catch (err) {
-    console.error('Error fetching from Firestore:', err);
-    res.json([]);
+    console.error('Error fetching data:', err);
+    res.json(getLocalData());
   }
 });
 
-// POST save/update a record in Firestore
+// POST save/update a record
 app.post('/api/data', async (req, res) => {
   try {
     const newRecord = req.body;
@@ -57,16 +83,26 @@ app.post('/api/data', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Faltan campos obligatorios (empresa o periodo)' });
     }
 
-    // Unique ID for the document: Empresa + Period (e.g. "Google_2024-03")
-    const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
-    
-    // Set data (merge: true handles updates)
-    await reportsRef.doc(docId).set(newRecord, { merge: true });
-    
-    res.json({ success: true, message: 'Datos guardados en la nube correctamente' });
+    if (reportsRef) {
+      // Unique ID for the document: Empresa + Period (e.g. "Google_2024-03")
+      const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
+      await reportsRef.doc(docId).set(newRecord, { merge: true });
+      return res.json({ success: true, message: 'Datos guardados en la nube correctamente' });
+    } else {
+      // Local fallback
+      const localData = getLocalData();
+      const idx = localData.findIndex(r => r.empresa === newRecord.empresa && r.periodo === newRecord.periodo);
+      if (idx >= 0) {
+        localData[idx] = { ...localData[idx], ...newRecord };
+      } else {
+        localData.push(newRecord);
+      }
+      saveLocalData(localData);
+      return res.json({ success: true, message: 'Datos guardados localmente correctamente' });
+    }
   } catch (err) {
-    console.error('Error saving to Firestore:', err);
-    res.status(500).json({ success: false, message: 'Error al guardar datos en Firebase' });
+    console.error('Error saving data:', err);
+    res.status(500).json({ success: false, message: 'Error al guardar datos' });
   }
 });
 
@@ -77,6 +113,10 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Digital Insights corriendo en http://localhost:${PORT}`);
-  console.log(`📡 Conectado a Firebase Firestore (Proyecto: ${serviceAccount.project_id})\n`);
+  if (serviceAccount && serviceAccount.project_id) {
+    console.log(`📡 Conectado a Firebase Firestore (Proyecto: ${serviceAccount.project_id})\n`);
+  } else {
+    console.log(`📁 Modo local activo: datos guardados en data-local.json\n`);
+  }
 });
 
