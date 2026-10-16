@@ -865,6 +865,31 @@ function renderChartTendencia() {
   });
 }
 
+// ===== DEDICATED HELPERS FOR VENTAS (100% INDEPENDENT FROM MARKETING) =====
+function getRecordVentasMonto(r) {
+  if (!r) return 0;
+  if (r.comercial_facturacion !== undefined && r.comercial_facturacion !== null && r.comercial_facturacion !== '') {
+    return parseFloat(r.comercial_facturacion) || 0;
+  }
+  return 0;
+}
+
+function getRecordVentasCierres(r) {
+  if (!r) return 0;
+  if (r.comercial_cierres !== undefined && r.comercial_cierres !== null && r.comercial_cierres !== '') {
+    return parseInt(r.comercial_cierres) || 0;
+  }
+  return 0;
+}
+
+function getRecordVentasLeads(r) {
+  if (!r) return 0;
+  if (r.comercial_leads !== undefined && r.comercial_leads !== null && r.comercial_leads !== '') {
+    return parseInt(r.comercial_leads) || 0;
+  }
+  return 0;
+}
+
 // ===== VENTAS DASHBOARD (MATCHING REFERENCE DESIGN) =====
 function renderVentasDashboard(company, year) {
   ventasActiveCompany = company || ventasActiveCompany;
@@ -908,7 +933,7 @@ function renderVentasDashboard(company, year) {
   let totalYearVentas = 0;
   let monthsWithSales = 0;
   currentYearRecords.forEach(r => {
-    const val = Number(r.ventas_totales) || 0;
+    const val = getRecordVentasMonto(r);
     if (val > 0) {
       totalYearVentas += val;
       monthsWithSales++;
@@ -919,7 +944,7 @@ function renderVentasDashboard(company, year) {
   let prevYearTotalVentas = 0;
   let prevYearMonthsWithSales = 0;
   prevYearRecords.forEach(r => {
-    const val = Number(r.ventas_totales) || 0;
+    const val = getRecordVentasMonto(r);
     if (val > 0) {
       prevYearTotalVentas += val;
       prevYearMonthsWithSales++;
@@ -977,7 +1002,7 @@ function renderVentasDashboard(company, year) {
   let minMonthRec = null;
   let minMonthVal = Infinity;
   currentYearRecords.forEach(r => {
-    const val = Number(r.ventas_totales) || 0;
+    const val = getRecordVentasMonto(r);
     if (val > 0 && val < minMonthVal) {
       minMonthVal = val;
       minMonthRec = r;
@@ -1012,7 +1037,7 @@ function renderVentasDashboard(company, year) {
   let maxMonthRec = null;
   let maxMonthVal = 0;
   currentYearRecords.forEach(r => {
-    const val = Number(r.ventas_totales) || 0;
+    const val = getRecordVentasMonto(r);
     if (val > maxMonthVal) {
       maxMonthVal = val;
       maxMonthRec = r;
@@ -1194,7 +1219,7 @@ function renderVentasCustomerHabitsChart(company) {
   const getMonthSales = (m, y) => {
     const mStr = String(m).padStart(2, '0');
     const rec = companyRecords.find(r => r.periodo === `${mStr}-${y}`);
-    return rec && rec.ventas_totales !== undefined && Number(rec.ventas_totales) > 0 ? Number(rec.ventas_totales) : 0;
+    return getRecordVentasMonto(rec);
   };
 
   const getYearTotal = (y) => {
@@ -1804,7 +1829,7 @@ function renderProductStatisticChart(company) {
   const getMonthSales = (m) => {
     const mStr = String(m).padStart(2, '0');
     const rec = companyRecords.find(r => r.periodo === `${mStr}-${currentYear}`);
-    return rec && rec.ventas_totales !== undefined ? Number(rec.ventas_totales) : 0;
+    return getRecordVentasMonto(rec);
   };
 
   const q1 = getMonthSales(1) + getMonthSales(2) + getMonthSales(3);
@@ -1910,7 +1935,7 @@ function renderCustomerGrowthMetrics(company) {
   const getMonthSales = (m, y) => {
     const mStr = String(m).padStart(2, '0');
     const rec = companyRecords.find(r => r.periodo === `${mStr}-${y}`);
-    return rec && rec.ventas_totales !== undefined && Number(rec.ventas_totales) > 0 ? Number(rec.ventas_totales) : 0;
+    return getRecordVentasMonto(rec);
   };
 
   // Populate Month and Amount (Mes y Monto) for currentYear
@@ -2011,9 +2036,15 @@ function renderVentasModalTable() {
     const key = `${mStr}-${year}`;
     const rec = companyRecords.find(r => r.periodo === key) || {};
     
-    const vVal = rec.ventas_totales !== undefined && rec.ventas_totales !== '' ? Number(rec.ventas_totales) : '';
-    const cVal = rec.conversiones_totales !== undefined && rec.conversiones_totales !== '' ? Number(rec.conversiones_totales) : '';
-    const lVal = (Number(rec.conv_whatsapp) || 0) + (Number(rec.conv_llamadas) || 0) + (Number(rec.conv_correos) || 0);
+    const vVal = (rec.comercial_facturacion !== undefined && rec.comercial_facturacion !== '') 
+      ? Number(rec.comercial_facturacion) 
+      : '';
+    const cVal = (rec.comercial_cierres !== undefined && rec.comercial_cierres !== '') 
+      ? Number(rec.comercial_cierres) 
+      : '';
+    const lVal = (rec.comercial_leads !== undefined && rec.comercial_leads !== '') 
+      ? Number(rec.comercial_leads) 
+      : '';
 
     html += `
       <tr style="border-bottom: 1px solid #f1f5f9;">
@@ -2025,7 +2056,7 @@ function renderVentasModalTable() {
           <input type="number" class="input-ventas-table-cierres" data-month="${mStr}" value="${cVal}" placeholder="0" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 0.82rem;" />
         </td>
         <td style="padding: 6px 14px;">
-          <input type="number" class="input-ventas-table-leads" data-month="${mStr}" value="${lVal > 0 ? lVal : ''}" placeholder="0" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 0.82rem;" />
+          <input type="number" class="input-ventas-table-leads" data-month="${mStr}" value="${lVal}" placeholder="0" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 0.82rem;" />
         </td>
       </tr>
     `;
@@ -2095,26 +2126,22 @@ async function saveVentasAnual() {
     
     const vVal = vInputs[m] ? vInputs[m].value.trim() : '';
     const cVal = cInputs[m] ? cInputs[m].value.trim() : '';
-    const lVal = lInputs[m] ? parseInt(lInputs[m].value) || 0 : 0;
+    const lVal = lInputs[m] ? lInputs[m].value.trim() : '';
 
-    if (vVal !== '' || cVal !== '' || lVal > 0) {
+    if (vVal !== '' || cVal !== '' || lVal !== '') {
       const vNum = parseFloat(vVal) || 0;
       const cNum = parseInt(cVal) || 0;
+      const lNum = parseInt(lVal) || 0;
       const tNum = (cNum > 0 && vNum > 0) ? Math.round(vNum / cNum) : 0;
 
-      const wp = Math.round(lVal * 0.6);
-      const llam = Math.round(lVal * 0.25);
-      const corr = lVal - wp - llam;
-
+      // 100% INDEPENDIENTE: Ventas NUNCA toca ni sobreescribe campos de Marketing
       batchRecords.push({
         empresa: modalVentasCompany,
         periodo: periodo,
-        ventas_totales: String(vNum),
-        conversiones_totales: String(cNum),
-        ticket_promedio: String(tNum),
-        conv_whatsapp: String(wp),
-        conv_llamadas: String(llam),
-        conv_correos: String(corr)
+        comercial_facturacion: String(vNum),
+        comercial_cierres: String(cNum),
+        comercial_ticket: String(tNum),
+        comercial_leads: String(lNum)
       });
     }
   }
@@ -2150,73 +2177,11 @@ async function saveVentasAnual() {
 }
 
 function prefillQuickVentas() {
-  const mSelect = document.getElementById('quickVentasMonth');
-  const ySelect = document.getElementById('quickVentasYear');
-  if (!mSelect || !ySelect) return;
-
-  const key = `${mSelect.value}-${ySelect.value}`;
-  const rec = allData.find(r => r.empresa === modalVentasCompany && r.periodo === key) || {};
-
-  document.getElementById('quickVentasMonto').value = rec.ventas_totales || '';
-  document.getElementById('quickVentasCierres').value = rec.conversiones_totales || '';
-  document.getElementById('quickVentasWp').value = rec.conv_whatsapp || '';
-  
-  const llam = Number(rec.conv_llamadas) || 0;
-  const corr = Number(rec.conv_correos) || 0;
-  document.getElementById('quickVentasOtrosLeads').value = (llam + corr) > 0 ? (llam + corr) : '';
-
-  const meta = Number(rec.gasto_meta_ads) || 0;
-  const goo = Number(rec.gasto_google_ads) || 0;
-  const tt = Number(rec.gasto_tiktok_ads) || 0;
-  document.getElementById('quickVentasAds').value = (meta + goo + tt) > 0 ? (meta + goo + tt) : '';
+  // Deprecado - sustituido por captura anual independiente
 }
 
 async function saveQuickVentas() {
-  const m = document.getElementById('quickVentasMonth').value;
-  const y = document.getElementById('quickVentasYear').value;
-  const periodo = `${m}-${y}`;
-
-  const ventas = parseFloat(document.getElementById('quickVentasMonto').value) || 0;
-  const cierres = parseInt(document.getElementById('quickVentasCierres').value) || 0;
-  const ads = parseFloat(document.getElementById('quickVentasAds').value) || 0;
-  const wp = parseInt(document.getElementById('quickVentasWp').value) || 0;
-  const otros = parseInt(document.getElementById('quickVentasOtrosLeads').value) || 0;
-  const ticket = (cierres > 0 && ventas > 0) ? Math.round(ventas / cierres) : 0;
-
-  const record = {
-    empresa: modalVentasCompany,
-    periodo: periodo,
-    ventas_totales: String(ventas),
-    conversiones_totales: String(cierres),
-    ticket_promedio: String(ticket),
-    conv_whatsapp: String(wp),
-    conv_llamadas: String(Math.round(otros * 0.6)),
-    conv_correos: String(otros - Math.round(otros * 0.6)),
-    gasto_meta_ads: String(Math.round(ads * 0.6)),
-    gasto_google_ads: String(Math.round(ads * 0.4))
-  };
-
-  try {
-    const res = await fetch('/api/data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
-
-    if (!res.ok) throw new Error('Error al guardar');
-
-    const idx = allData.findIndex(r => r.empresa === record.empresa && r.periodo === record.periodo);
-    if (idx >= 0) allData[idx] = { ...allData[idx], ...record };
-    else allData.push(record);
-    localStorage.setItem('di_data', JSON.stringify(allData));
-
-    showToast(`✅ Venta registrada para ${periodo}`, 'success');
-    closeVentasModal();
-    renderVentasDashboard(ventasActiveCompany);
-  } catch (err) {
-    console.error(err);
-    showToast('❌ Error al guardar venta', 'error');
-  }
+  // Deprecado - sustituido por captura anual independiente
 }
 
 // ===== COMPARE CHART =====
