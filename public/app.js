@@ -29,6 +29,11 @@ const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Ago
 let allData = [];
 let activeCompany = 'EHS';
 let activePeriod = { month: new Date().getMonth(), year: new Date().getFullYear() };
+let currentSidebarModule = 'menuMarketing';
+let ventasActiveCompany = 'EHS';
+let ventasActiveYear = 2026;
+let ventasChartGranularity = 'mensual'; // 'general' | 'anual' | 'semestral' | 'bimestral' | 'mensual'
+let ventasSelectedYears = [2024, 2025, 2026];
 let activeSocialNet = 'ig';
 let activeSocialFormNet = 'ig';
 let charts = {};
@@ -56,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Inicializar datos una vez autenticado
         initPeriod();
         await loadData();
+        setInitialPeriodFromData();
         renderDashboard();
         bindEvents();
       } else {
@@ -73,6 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.style.overflow = 'auto';
     initPeriod();
     await loadData();
+    setInitialPeriodFromData();
     renderDashboard();
     bindEvents();
   } else {
@@ -88,7 +95,29 @@ function initPeriod() {
 }
 
 function updatePeriodLabel() {
-  document.getElementById('periodLabel').textContent = `${MONTHS_ES[activePeriod.month]} ${activePeriod.year}`;
+  const lbl = `${MONTHS_ES[activePeriod.month]} ${activePeriod.year}`;
+  const pEl = document.getElementById('periodLabel');
+  if (pEl) pEl.textContent = lbl;
+  const vEl = document.getElementById('ventasPeriodLabel');
+  if (vEl) vEl.textContent = lbl;
+}
+
+function setInitialPeriodFromData() {
+  const companyRecords = allData.filter(r => r.empresa === activeCompany);
+  if (companyRecords.length > 0) {
+    const curKey = getPeriodKey();
+    const hasCur = companyRecords.some(r => r.periodo === curKey);
+    if (!hasCur) {
+      const sorted = [...companyRecords].sort((a, b) => {
+        const [am, ay] = a.periodo.split('-').map(Number);
+        const [bm, by] = b.periodo.split('-').map(Number);
+        return (by * 12 + bm) - (ay * 12 + am);
+      });
+      const [mStr, yStr] = sorted[0].periodo.split('-');
+      activePeriod = { month: parseInt(mStr) - 1, year: parseInt(yStr) };
+      updatePeriodLabel();
+    }
+  }
 }
 
 function getPeriodKey() {
@@ -709,44 +738,91 @@ function renderChartTendencia() {
   destroyChart('chartTendencia');
   const ctx = document.getElementById('chartTendencia');
   if (!ctx) return;
-  const records = getRecordsForCompany();
-  if (records.length === 0) return;
 
-  const labels = records.map(r => getPeriodLabel(r.periodo));
-  const visitas = records.map(r => (parseFloat(r.web_visitas_organicas) || 0) + (parseFloat(r.web_visitas_ads) || 0) || parseFloat(r.web_visitas) || 0);
-  const impresionesWeb = records.map(r => (parseFloat(r.web_impresiones_organicas) || 0) + (parseFloat(r.web_impresiones_ads) || 0));
-  const conversiones = records.map(r => parseFloat(r.conversiones_totales) || 0);
-  
-  const seguidoresTotales = records.map(r => {
-    return ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(r[`${net}_seguidores`]) || 0), 0);
-  });
-  
-  const formularios = records.map(r => parseFloat(r.web_formularios) || 0);
-  
-  const gastoInversion = records.map(r => {
-    const subtotalAds = ['tiktok_ads', 'google_ads', 'meta_ads'].reduce((s, k) => s + (parseFloat(r[`gasto_${k}`]) || 0), 0);
-    const herramientas = parseFloat(r.gasto_mailchimp) || 0;
-    return subtotalAds + herramientas;
-  });
+  const currentYear = activePeriod.year;
+  const badgeEl = document.getElementById('chartTendenciaYearBadge');
+  if (badgeEl) badgeEl.textContent = `Año ${currentYear}`;
 
-  const ingresosTotales = records.map(r => parseFloat(r.ventas_totales) || 0);
+  const companyRecords = allData.filter(r => r.empresa === activeCompany);
+
+  // 12 meses de Enero a Diciembre del año seleccionado
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const labels = monthNames;
+
+  // Encontrar el último mes con registro para este año
+  let maxMonthWithData = 0;
+  for (let m = 1; m <= 12; m++) {
+    const mStr = String(m).padStart(2, '0');
+    if (companyRecords.some(r => r.periodo === `${mStr}-${currentYear}`)) {
+      maxMonthWithData = m;
+    }
+  }
+
+  const visitas = [];
+  const impresionesWeb = [];
+  const conversiones = [];
+  const seguidoresTotales = [];
+  const formularios = [];
+  const gastoInversion = [];
+  const ingresosTotales = [];
+
+  for (let m = 1; m <= 12; m++) {
+    const mStr = String(m).padStart(2, '0');
+    const rec = companyRecords.find(r => r.periodo === `${mStr}-${currentYear}`);
+
+    if (rec) {
+      visitas.push((parseFloat(rec.web_visitas_organicas) || 0) + (parseFloat(rec.web_visitas_ads) || 0) || parseFloat(rec.web_visitas) || 0);
+      impresionesWeb.push((parseFloat(rec.web_impresiones_organicas) || 0) + (parseFloat(rec.web_impresiones_ads) || 0));
+      conversiones.push(parseFloat(rec.conversiones_totales) || 0);
+
+      const seg = ['ig','fb','tt','yt','li'].reduce((sum, net) => sum + (parseFloat(rec[`${net}_seguidores`]) || 0), 0);
+      seguidoresTotales.push(seg);
+
+      formularios.push(parseFloat(rec.web_formularios) || 0);
+
+      const subtotalAds = ['tiktok_ads', 'google_ads', 'meta_ads'].reduce((s, k) => s + (parseFloat(rec[`gasto_${k}`]) || 0), 0);
+      const herramientas = parseFloat(rec.gasto_mailchimp) || 0;
+      gastoInversion.push(subtotalAds + herramientas);
+
+      ingresosTotales.push(parseFloat(rec.ventas_totales) || 0);
+    } else if (m <= maxMonthWithData) {
+      // Mes intermedio o previo dentro del año pero sin registro
+      visitas.push(0);
+      impresionesWeb.push(0);
+      conversiones.push(0);
+      seguidoresTotales.push(0);
+      formularios.push(0);
+      gastoInversion.push(0);
+      ingresosTotales.push(0);
+    } else {
+      // Meses futuros del año que aún no transcurren
+      visitas.push(null);
+      impresionesWeb.push(null);
+      conversiones.push(null);
+      seguidoresTotales.push(null);
+      formularios.push(null);
+      gastoInversion.push(null);
+      ingresosTotales.push(null);
+    }
+  }
 
   charts['chartTendencia'] = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'Visitas Web', data: visitas, borderColor: '#1A73E8', backgroundColor: 'rgba(26,115,232,.08)', borderWidth: 2.5, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#1A73E8' },
-        { label: 'Impresiones Web', data: impresionesWeb, borderColor: '#7B1FA2', backgroundColor: 'rgba(123,31,162,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#7B1FA2' },
-        { label: 'Conversiones', data: conversiones, borderColor: '#0F9D58', backgroundColor: 'rgba(15,157,88,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#0F9D58' },
-        { label: 'Seguidores Totales', data: seguidoresTotales, borderColor: '#FF9800', backgroundColor: 'rgba(255,152,0,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#FF9800' },
-        { label: 'Formularios Enviados', data: formularios, borderColor: '#00ACC1', backgroundColor: 'rgba(0,172,193,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#00ACC1' },
-        { label: 'Gasto Inversión ($)', data: gastoInversion, borderColor: '#E53935', backgroundColor: 'rgba(229,57,53,.06)', borderWidth: 2, borderDash: [4, 4], tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#E53935' },
-        { label: 'Ingresos Totales ($)', data: ingresosTotales, borderColor: '#2E7D32', backgroundColor: 'rgba(46,125,50,.08)', borderWidth: 2.5, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#2E7D32' }
+        { label: 'Visitas Web', data: visitas, borderColor: '#1A73E8', backgroundColor: 'rgba(26,115,232,.08)', borderWidth: 2.5, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#1A73E8', spanGaps: true },
+        { label: 'Impresiones Web', data: impresionesWeb, borderColor: '#7B1FA2', backgroundColor: 'rgba(123,31,162,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#7B1FA2', spanGaps: true },
+        { label: 'Conversiones', data: conversiones, borderColor: '#0F9D58', backgroundColor: 'rgba(15,157,88,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#0F9D58', spanGaps: true },
+        { label: 'Seguidores Totales', data: seguidoresTotales, borderColor: '#FF9800', backgroundColor: 'rgba(255,152,0,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#FF9800', spanGaps: true },
+        { label: 'Formularios Enviados', data: formularios, borderColor: '#00ACC1', backgroundColor: 'rgba(0,172,193,.06)', borderWidth: 2, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#00ACC1', spanGaps: true },
+        { label: 'Gasto Inversión ($)', data: gastoInversion, borderColor: '#E53935', backgroundColor: 'rgba(229,57,53,.06)', borderWidth: 2, borderDash: [4, 4], tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#E53935', spanGaps: true },
+        { label: 'Ingresos Totales ($)', data: ingresosTotales, borderColor: '#2E7D32', backgroundColor: 'rgba(46,125,50,.08)', borderWidth: 2.5, tension: .4, fill: false, pointRadius: 4, pointBackgroundColor: '#2E7D32', spanGaps: true }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
@@ -755,13 +831,20 @@ function renderChartTendencia() {
         },
         tooltip: {
           callbacks: {
+            title: (items) => {
+              if (items && items.length > 0) {
+                const idx = items[0].dataIndex;
+                return `${MONTHS_ES[idx]} ${currentYear}`;
+              }
+              return '';
+            },
             label: function(context) {
               const label = context.dataset.label || '';
               const val = context.parsed.y !== null ? context.parsed.y : 0;
               if (label.includes('Gasto Inversión') || label.includes('Ingresos Totales')) {
-                return `${label}: $${val.toLocaleString('es-MX')}`;
+                return ` ${label}: $${val.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               }
-              return `${label}: ${val.toLocaleString('es-MX')}`;
+              return ` ${label}: ${val.toLocaleString('es-MX')}`;
             }
           }
         }
@@ -780,6 +863,1360 @@ function renderChartTendencia() {
       }
     }
   });
+}
+
+// ===== VENTAS DASHBOARD (MATCHING REFERENCE DESIGN) =====
+function renderVentasDashboard(company, year) {
+  ventasActiveCompany = company || ventasActiveCompany;
+  if (year) ventasActiveYear = year;
+  const isEHS = ventasActiveCompany === 'EHS';
+
+  // Header Title & Subtitle
+  const titleEl = document.getElementById('ventasTitle');
+  if (titleEl) titleEl.textContent = 'Sales Report';
+
+  const badgeEl = document.getElementById('ventasBadgeCompany');
+  if (badgeEl) {
+    badgeEl.textContent = isEHS ? 'EHS INTEGRAL' : 'GESTIONRH';
+    badgeEl.style.background = isEHS ? 'rgba(22, 147, 93, 0.12)' : 'rgba(29, 70, 146, 0.12)';
+    badgeEl.style.color = isEHS ? '#16935d' : '#1d4692';
+  }
+
+  const dateSubEl = document.getElementById('ventasDateSubtitle');
+  if (dateSubEl) {
+    dateSubEl.textContent = `Reporte Anual de Facturación · Ejercicio ${ventasActiveYear}`;
+  }
+
+  const periodLabelEl = document.getElementById('ventasPeriodLabel');
+  if (periodLabelEl) {
+    periodLabelEl.textContent = `Año ${ventasActiveYear}`;
+  }
+  const yearDropdownEl = document.getElementById('ventasYearDropdown');
+  if (yearDropdownEl) {
+    yearDropdownEl.value = String(ventasActiveYear);
+  }
+
+  // Records for active company and active year
+  const companyRecords = allData.filter(r => r.empresa === ventasActiveCompany);
+  const currentYear = ventasActiveYear;
+  const prevYear = currentYear - 1;
+
+  const currentYearRecords = companyRecords.filter(r => r.periodo.endsWith(`-${currentYear}`));
+  const prevYearRecords = companyRecords.filter(r => r.periodo.endsWith(`-${prevYear}`));
+
+  // Total sales of the active year
+  let totalYearVentas = 0;
+  let monthsWithSales = 0;
+  currentYearRecords.forEach(r => {
+    const val = Number(r.ventas_totales) || 0;
+    if (val > 0) {
+      totalYearVentas += val;
+      monthsWithSales++;
+    }
+  });
+
+  // Previous year total sales
+  let prevYearTotalVentas = 0;
+  let prevYearMonthsWithSales = 0;
+  prevYearRecords.forEach(r => {
+    const val = Number(r.ventas_totales) || 0;
+    if (val > 0) {
+      prevYearTotalVentas += val;
+      prevYearMonthsWithSales++;
+    }
+  });
+
+  // 1. Facturación Anual (Card 1)
+  const vEl = document.getElementById('v_ventas_totales');
+  if (vEl) {
+    vEl.textContent = '$' + totalYearVentas.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const vBadgeEl = document.getElementById('v_ventas_badge');
+  const vDiffEl = document.getElementById('v_ventas_diff');
+  if (vBadgeEl && prevYearTotalVentas > 0) {
+    const diff = totalYearVentas - prevYearTotalVentas;
+    const pct = ((diff / prevYearTotalVentas) * 100).toFixed(1);
+    const isPos = diff >= 0;
+    vBadgeEl.textContent = (isPos ? '+' : '') + pct + '% YoY';
+    vBadgeEl.className = 'ventas-pill-badge ' + (isPos ? 'green' : 'red');
+    if (vDiffEl) vDiffEl.textContent = 'vs Año ' + prevYear + ' ($' + (isPos ? '+' : '') + Math.round(diff).toLocaleString('es-MX') + ')';
+  } else if (vBadgeEl) {
+    vBadgeEl.textContent = 'Base histórica';
+    vBadgeEl.className = 'ventas-pill-badge green';
+    if (vDiffEl) vDiffEl.textContent = `Ejercicio inicial registrado`;
+  }
+
+  // 2. Promedio Mensual del Año (Card 2)
+  const promedioMensual = monthsWithSales > 0 ? totalYearVentas / monthsWithSales : 0;
+  const prevYearPromedio = prevYearMonthsWithSales > 0 ? prevYearTotalVentas / prevYearMonthsWithSales : 0;
+
+  const promEl = document.getElementById('v_promedio_mensual');
+  if (promEl) {
+    promEl.textContent = '$' + promedioMensual.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const promDiffEl = document.getElementById('v_promedio_diff');
+  if (promDiffEl) {
+    promDiffEl.textContent = `Promedio en ${monthsWithSales} meses facturados`;
+  }
+
+  const promBadgeEl = document.getElementById('v_promedio_badge');
+  if (promBadgeEl && prevYearPromedio > 0) {
+    const pDiff = promedioMensual - prevYearPromedio;
+    const pPct = ((pDiff / prevYearPromedio) * 100).toFixed(1);
+    const isPos = pDiff >= 0;
+    promBadgeEl.textContent = (isPos ? '+' : '') + pPct + '%';
+    promBadgeEl.className = 'ventas-pill-badge ' + (isPos ? 'green' : 'red');
+  } else if (promBadgeEl) {
+    promBadgeEl.textContent = '+0.0%';
+    promBadgeEl.className = 'ventas-pill-badge green';
+  }
+
+  // 3. Mes con Menor Facturación (Card 3 - Piso Anual)
+  let minMonthRec = null;
+  let minMonthVal = Infinity;
+  currentYearRecords.forEach(r => {
+    const val = Number(r.ventas_totales) || 0;
+    if (val > 0 && val < minMonthVal) {
+      minMonthVal = val;
+      minMonthRec = r;
+    }
+  });
+
+  if (minMonthVal === Infinity) {
+    minMonthVal = 0;
+  }
+
+  const minEl = document.getElementById('v_mes_min');
+  if (minEl) {
+    minEl.textContent = '$' + minMonthVal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const minSubEl = document.getElementById('v_mes_min_sub');
+  if (minSubEl && minMonthRec) {
+    const mNum = parseInt(minMonthRec.periodo.split('-')[0], 10) - 1;
+    const mName = MONTHS_ES[mNum] || '';
+    minSubEl.textContent = `${mName} (Menor facturación ${currentYear})`;
+  } else if (minSubEl) {
+    minSubEl.textContent = `Menor facturación registrada`;
+  }
+
+  const minBadgeEl = document.getElementById('v_mes_min_badge');
+  if (minBadgeEl) {
+    minBadgeEl.textContent = 'Piso Anual';
+    minBadgeEl.className = 'ventas-pill-badge red';
+  }
+
+  // 4. Mes Récord del Año (Card 4)
+  let maxMonthRec = null;
+  let maxMonthVal = 0;
+  currentYearRecords.forEach(r => {
+    const val = Number(r.ventas_totales) || 0;
+    if (val > maxMonthVal) {
+      maxMonthVal = val;
+      maxMonthRec = r;
+    }
+  });
+
+  const recordEl = document.getElementById('v_mes_record');
+  if (recordEl) {
+    recordEl.textContent = '$' + maxMonthVal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const recordSubEl = document.getElementById('v_mes_record_sub');
+  if (recordSubEl && maxMonthRec) {
+    const mNum = parseInt(maxMonthRec.periodo.split('-')[0], 10) - 1;
+    const mName = MONTHS_ES[mNum] || '';
+    recordSubEl.textContent = `${mName} (Mayor facturación ${currentYear})`;
+  } else if (recordSubEl) {
+    recordSubEl.textContent = `Mayor facturación registrada`;
+  }
+
+  // Customer Habits Chart
+  renderVentasCustomerHabitsChart(ventasActiveCompany);
+
+  // Product Statistic Pie Chart & Items
+  renderProductStatisticChart(ventasActiveCompany);
+
+  // Customer Growth Bubbles & Bars
+  renderCustomerGrowthMetrics(ventasActiveCompany);
+
+}
+
+const VENTAS_YEAR_PALETTE = {
+  2026: '#16935d', // emerald
+  2025: '#F4511E', // orange
+  2024: '#1d4692', // blue
+  2023: '#8b5cf6', // purple
+  2022: '#64748b', // slate
+  2021: '#06b6d4', // cyan
+  2027: '#ec4899', // pink
+  2028: '#eab308', // amber
+  2029: '#14b8a6', // teal
+  2030: '#f97316'  // deep orange
+};
+
+const EXTRA_YEAR_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#a855f7'];
+
+function getVentasYearColor(year, index = 0) {
+  const y = parseInt(year);
+  if (VENTAS_YEAR_PALETTE[y]) return VENTAS_YEAR_PALETTE[y];
+  return EXTRA_YEAR_COLORS[index % EXTRA_YEAR_COLORS.length];
+}
+
+function getAvailableVentasYears(company) {
+  const companyRecords = allData.filter(r => r.empresa === company);
+  const yearsSet = new Set([2022, 2023, 2024, 2025, 2026]);
+  if (ventasActiveYear) yearsSet.add(Number(ventasActiveYear));
+  
+  companyRecords.forEach(r => {
+    if (r.periodo && r.periodo.includes('-')) {
+      const parts = r.periodo.split('-');
+      const y = parseInt(parts[1]);
+      if (!isNaN(y) && y >= 2000 && y <= 2050) {
+        yearsSet.add(y);
+      }
+    }
+  });
+
+  return Array.from(yearsSet).sort((a, b) => b - a);
+}
+
+function updateVentasGranularityTabsUI() {
+  const tabs = document.querySelectorAll('#ventasGranularityTabs .ventas-tab-btn');
+  tabs.forEach(tab => {
+    if (tab.dataset.granularity === ventasChartGranularity) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  renderVentasYearComparePopoverUI();
+}
+
+function renderVentasYearComparePopoverUI() {
+  const subWrapper = document.getElementById('ventasSubFilterWrapper');
+  if (!subWrapper) return;
+
+  // General & Anual don't need multi-year selector popover
+  if (ventasChartGranularity === 'general' || ventasChartGranularity === 'anual') {
+    subWrapper.style.display = 'none';
+    return;
+  }
+  subWrapper.style.display = 'flex';
+
+  const availableYears = getAvailableVentasYears(ventasActiveCompany);
+
+  // Validate ventasSelectedYears: keep only available years, ensure at least activeYear or most recent
+  ventasSelectedYears = ventasSelectedYears.filter(y => availableYears.includes(y));
+  if (ventasSelectedYears.length === 0) {
+    ventasSelectedYears = [availableYears[0]];
+  }
+
+  // Update Trigger Button Label
+  const labelEl = document.getElementById('btnVentasYearCompareLabel');
+  if (labelEl) {
+    if (ventasSelectedYears.length === 1) {
+      labelEl.textContent = `Año: ${ventasSelectedYears[0]}`;
+    } else if (ventasSelectedYears.length <= 3) {
+      const sorted = [...ventasSelectedYears].sort((a, b) => a - b);
+      labelEl.textContent = `Comparar: ${sorted.join(' vs ')}`;
+    } else {
+      labelEl.textContent = `Comparando: ${ventasSelectedYears.length} años`;
+    }
+  }
+
+  // Update Badge
+  const badgeEl = document.getElementById('ventasYearCountBadge');
+  if (badgeEl) {
+    badgeEl.textContent = `${ventasSelectedYears.length} ${ventasSelectedYears.length === 1 ? 'seleccionado' : 'seleccionados'}`;
+  }
+
+  // Populate Checkboxes List
+  const listEl = document.getElementById('ventasYearsCheckboxList');
+  if (!listEl) return;
+
+  listEl.innerHTML = availableYears.map((year, idx) => {
+    const isChecked = ventasSelectedYears.includes(year);
+    const color = getVentasYearColor(year, idx);
+    return `
+      <label class="ventas-year-checkbox-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.8rem; font-weight: 600; color: #1e293b; user-select: none;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" class="ventas-year-checkbox" value="${year}" ${isChecked ? 'checked' : ''} style="cursor: pointer; accent-color: #16935d; width: 15px; height: 15px;" />
+          <span>Año ${year}</span>
+        </div>
+        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${color};"></span>
+      </label>
+    `;
+  }).join('');
+
+  // Attach event listener to checkboxes
+  listEl.querySelectorAll('.ventas-year-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const yr = parseInt(e.target.value);
+      if (e.target.checked) {
+        if (!ventasSelectedYears.includes(yr)) {
+          ventasSelectedYears.push(yr);
+        }
+      } else {
+        if (ventasSelectedYears.length > 1) {
+          ventasSelectedYears = ventasSelectedYears.filter(y => y !== yr);
+        } else {
+          // Keep at least one selected!
+          e.target.checked = true;
+          showToast('⚠️ Debes mantener al menos un año seleccionado', '');
+          return;
+        }
+      }
+      renderVentasYearComparePopoverUI();
+      renderVentasCustomerHabitsChart(ventasActiveCompany);
+    });
+  });
+}
+
+function renderVentasCustomerHabitsChart(company) {
+  destroyChart('chartVentasCustomerHabits');
+  const ctx = document.getElementById('chartVentasCustomerHabits');
+  if (!ctx) return;
+
+  updateVentasGranularityTabsUI();
+
+  const legendEl = document.getElementById('ventasChartLegend');
+  const statChipsEl = document.getElementById('ventasChartStatChips');
+  const titleEl = document.getElementById('ventasChartTitle');
+  const subtitleEl = document.getElementById('ventasChartSubtitle');
+
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const companyRecords = allData.filter(r => r.empresa === company);
+
+  const getMonthSales = (m, y) => {
+    const mStr = String(m).padStart(2, '0');
+    const rec = companyRecords.find(r => r.periodo === `${mStr}-${y}`);
+    return rec && rec.ventas_totales !== undefined && Number(rec.ventas_totales) > 0 ? Number(rec.ventas_totales) : 0;
+  };
+
+  const getYearTotal = (y) => {
+    let tot = 0;
+    for (let m = 1; m <= 12; m++) tot += getMonthSales(m, y);
+    return tot;
+  };
+
+  const allAvailableYearsAsc = getAvailableVentasYears(company).sort((a, b) => a - b);
+  const selectedYearsAsc = [...ventasSelectedYears].sort((a, b) => a - b);
+
+  // ==========================================
+  // MODE 1: GENERAL (Línea de tiempo continua histórica)
+  // ==========================================
+  if (ventasChartGranularity === 'general') {
+    if (titleEl) titleEl.textContent = 'Evolución Histórica de Facturación';
+    if (subtitleEl) subtitleEl.textContent = 'Línea de tiempo continua mes a mes desde 2022 a la fecha';
+
+    const timelineLabels = [];
+    const timelineData = [];
+    let grandTotal = 0;
+    let maxVal = 0;
+    let maxLabel = '';
+    let countMonths = 0;
+
+    allAvailableYearsAsc.forEach(y => {
+      for (let m = 1; m <= 12; m++) {
+        const val = getMonthSales(m, y);
+        if (y === 2026 && m > 9 && val === 0) continue;
+        if (y > 2026 && val === 0) continue;
+
+        const label = `${monthNames[m - 1]} '${String(y).slice(-2)}`;
+        timelineLabels.push(label);
+        timelineData.push(val);
+        grandTotal += val;
+        if (val > 0) countMonths++;
+        if (val > maxVal) {
+          maxVal = val;
+          maxLabel = `${monthNames[m - 1]} ${y}`;
+        }
+      }
+    });
+
+    const avgMonthly = countMonths > 0 ? grandTotal / countMonths : 0;
+
+    if (legendEl) {
+      legendEl.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #0a3d24;">
+          <span style="width: 14px; height: 3px; background: #0a3d24; border-radius: 2px;"></span>
+          <span>Facturación Histórica Continua</span>
+        </div>
+      `;
+    }
+
+    if (statChipsEl) {
+      statChipsEl.innerHTML = `
+        <div class="ventas-chart-stat-chip"><strong>Total Acumulado:</strong> $${(grandTotal / 1000000).toFixed(2)}M</div>
+        <div class="ventas-chart-stat-chip"><strong>Promedio Mensual:</strong> $${avgMonthly.toLocaleString('es-MX', { maximumFractionDigits: 0 })}</div>
+        <div class="ventas-chart-stat-chip"><strong>Pico Histórico:</strong> $${maxVal.toLocaleString('es-MX', { maximumFractionDigits: 0 })} (${maxLabel})</div>
+      `;
+    }
+
+    charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timelineLabels,
+        datasets: [{
+          label: 'Facturación Real',
+          data: timelineData,
+          borderColor: '#0a3d24',
+          backgroundColor: 'rgba(10, 61, 36, 0.08)',
+          fill: true,
+          borderWidth: 2.5,
+          tension: 0.35,
+          pointRadius: 2.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#0a3d24'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 10,
+            cornerRadius: 8,
+            callbacks: {
+              label: (c) => ` Facturado: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#64748b' } },
+          y: {
+            border: { dash: [4, 4] },
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              font: { size: 11 },
+              color: '#94a3b8',
+              callback: (v) => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)
+            }
+          }
+        }
+      }
+    });
+
+  // ==========================================
+  // MODE 2: ANUAL (Facturación Total por Año)
+  // ==========================================
+  } else if (ventasChartGranularity === 'anual') {
+    if (titleEl) titleEl.textContent = 'Facturación Anual Comparativa';
+    if (subtitleEl) subtitleEl.textContent = 'Facturación total acumulada por año fiscal con variación interanual';
+
+    const annualLabels = allAvailableYearsAsc.map(y => String(y));
+    const annualData = allAvailableYearsAsc.map(y => getYearTotal(y));
+    const year26 = annualData[allAvailableYearsAsc.indexOf(2026)] || 0;
+    const year25 = annualData[allAvailableYearsAsc.indexOf(2025)] || 0;
+    const yoy26 = year25 > 0 ? ((year26 - year25) / year25) * 100 : 0;
+    const grandTotal = annualData.reduce((a, b) => a + b, 0);
+
+    if (legendEl) {
+      legendEl.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #0a3d24;">
+          <span style="width: 10px; height: 10px; border-radius: 3px; background: #0a3d24;"></span>
+          <span>Facturación Anual Total (Cierre de Ejercicio)</span>
+        </div>
+      `;
+    }
+
+    if (statChipsEl) {
+      statChipsEl.innerHTML = `
+        <div class="ventas-chart-stat-chip"><strong>Facturación 2026:</strong> $${(year26 / 1000000).toFixed(2)}M</div>
+        <div class="ventas-chart-stat-chip"><strong>Crecimiento YoY:</strong> +${yoy26.toFixed(1)}%</div>
+        <div class="ventas-chart-stat-chip"><strong>Total Histórico:</strong> $${(grandTotal / 1000000).toFixed(2)}M</div>
+      `;
+    }
+
+    const barColors = allAvailableYearsAsc.map(y => getVentasYearColor(y));
+
+    charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: annualLabels,
+        datasets: [{
+          label: 'Total Facturado',
+          data: annualData,
+          backgroundColor: barColors,
+          borderRadius: 10,
+          borderSkipped: false,
+          barPercentage: 0.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 10,
+            cornerRadius: 8,
+            callbacks: {
+              label: (c) => {
+                const idx = c.dataIndex;
+                const val = Number(c.raw || 0);
+                const prev = idx > 0 ? annualData[idx - 1] : 0;
+                const diff = prev > 0 ? ((val - prev) / prev) * 100 : 0;
+                const diffStr = prev > 0 ? ` (${diff >= 0 ? '+' : ''}${diff.toFixed(1)}% vs anterior)` : '';
+                return ` Facturado: $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })}${diffStr}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 12, weight: '700' }, color: '#1e293b' } },
+          y: {
+            border: { dash: [4, 4] },
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              font: { size: 11 },
+              color: '#94a3b8',
+              callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'k')
+            }
+          }
+        }
+      }
+    });
+
+  // ==========================================
+  // MODE 3: SEMESTRAL (S1 Ene-Jun vs S2 Jul-Dic)
+  // ==========================================
+  } else if (ventasChartGranularity === 'semestral') {
+    if (titleEl) titleEl.textContent = 'Facturación Semestral';
+    if (subtitleEl) subtitleEl.textContent = 'Comparativa Semestre 1 (Ene-Jun) vs Semestre 2 (Jul-Dic)';
+
+    const sLabels = ['Semestre 1 (Ene - Jun)', 'Semestre 2 (Jul - Dic)'];
+
+    const getYearSemestres = (y) => {
+      let s1 = 0, s2 = 0;
+      for (let m = 1; m <= 6; m++) s1 += getMonthSales(m, y);
+      for (let m = 7; m <= 12; m++) s2 += getMonthSales(m, y);
+      return [s1, s2];
+    };
+
+    if (legendEl) {
+      legendEl.innerHTML = selectedYearsAsc.map(y => {
+        const color = getVentasYearColor(y);
+        return `
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: ${color}; font-size: 0.78rem;">
+            <span style="width: 10px; height: 10px; border-radius: 3px; background: ${color};"></span> Año ${y}
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (statChipsEl) {
+      statChipsEl.innerHTML = selectedYearsAsc.map(y => {
+        const [s1, s2] = getYearSemestres(y);
+        const color = getVentasYearColor(y);
+        return `
+          <div class="ventas-chart-stat-chip">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; margin-right:4px;"></span>
+            <strong>${y}:</strong> S1: $${(s1 / 1000000).toFixed(2)}M · S2: $${(s2 / 1000000).toFixed(2)}M
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (selectedYearsAsc.length === 1) {
+      const targetYear = selectedYearsAsc[0];
+      const [s1, s2] = getYearSemestres(targetYear);
+      const yTot = (s1 + s2) || 1;
+      const s1Pct = ((s1 / yTot) * 100).toFixed(1);
+      const s2Pct = ((s2 / yTot) * 100).toFixed(1);
+      const color = getVentasYearColor(targetYear);
+
+      charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [`Semestre 1 (Ene-Jun · ${s1Pct}%)`, `Semestre 2 (Jul-Dic · ${s2Pct}%)`],
+          datasets: [{
+            label: `Facturación ${targetYear}`,
+            data: [s1, s2],
+            backgroundColor: [color, color === '#16935d' ? '#22c55e' : color],
+            borderRadius: 10,
+            barPercentage: 0.45
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (c) => ` Facturado: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 12, weight: '700' }, color: '#1e293b' } },
+            y: {
+              border: { dash: [4, 4] },
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                color: '#94a3b8',
+                callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'k')
+              }
+            }
+          }
+        }
+      });
+    } else {
+      const datasets = selectedYearsAsc.map(y => {
+        const [s1, s2] = getYearSemestres(y);
+        const color = getVentasYearColor(y);
+        return {
+          label: `Año ${y}`,
+          data: [s1, s2],
+          backgroundColor: color,
+          borderRadius: 8,
+          barPercentage: 0.65,
+          categoryPercentage: 0.7
+        };
+      });
+
+      charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sLabels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label}: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 12, weight: '700' }, color: '#1e293b' } },
+            y: {
+              border: { dash: [4, 4] },
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                color: '#94a3b8',
+                callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'k')
+              }
+            }
+          }
+        }
+      });
+    }
+
+  // ==========================================
+  // MODE 4: BIMESTRAL (B1 a B6)
+  // ==========================================
+  } else if (ventasChartGranularity === 'bimestral') {
+    if (titleEl) titleEl.textContent = 'Facturación Bimestral';
+    if (subtitleEl) subtitleEl.textContent = 'Comportamiento por Bimestres (B1 a B6) de datos facturados';
+
+    const bLabels = ['B1 (Ene-Feb)', 'B2 (Mar-Abr)', 'B3 (May-Jun)', 'B4 (Jul-Ago)', 'B5 (Sep-Oct)', 'B6 (Nov-Dic)'];
+
+    const getYearBimestres = (y) => {
+      return [
+        getMonthSales(1, y) + getMonthSales(2, y),
+        getMonthSales(3, y) + getMonthSales(4, y),
+        getMonthSales(5, y) + getMonthSales(6, y),
+        getMonthSales(7, y) + getMonthSales(8, y),
+        getMonthSales(9, y) + getMonthSales(10, y),
+        getMonthSales(11, y) + getMonthSales(12, y)
+      ];
+    };
+
+    if (legendEl) {
+      legendEl.innerHTML = selectedYearsAsc.map(y => {
+        const color = getVentasYearColor(y);
+        return `
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: ${color}; font-size: 0.78rem;">
+            <span style="width: 10px; height: 10px; border-radius: 3px; background: ${color};"></span> Año ${y}
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (statChipsEl) {
+      statChipsEl.innerHTML = selectedYearsAsc.map(y => {
+        const tot = getYearTotal(y);
+        const color = getVentasYearColor(y);
+        return `
+          <div class="ventas-chart-stat-chip">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; margin-right:4px;"></span>
+            <strong>${y}:</strong> $${(tot / 1000000).toFixed(2)}M
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (selectedYearsAsc.length === 1) {
+      const targetYear = selectedYearsAsc[0];
+      const bData = getYearBimestres(targetYear);
+      const color = getVentasYearColor(targetYear);
+
+      charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: bLabels,
+          datasets: [{
+            label: `Facturación (${targetYear})`,
+            data: bData,
+            backgroundColor: color,
+            borderRadius: 8,
+            barPercentage: 0.55
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (c) => ` Facturado: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#1e293b' } },
+            y: {
+              border: { dash: [4, 4] },
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                color: '#94a3b8',
+                callback: (v) => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)
+              }
+            }
+          }
+        }
+      });
+    } else {
+      const datasets = selectedYearsAsc.map(y => {
+        const bData = getYearBimestres(y);
+        const color = getVentasYearColor(y);
+        return {
+          label: `Año ${y}`,
+          data: bData,
+          backgroundColor: color,
+          borderRadius: 6,
+          barPercentage: 0.7,
+          categoryPercentage: 0.75
+        };
+      });
+
+      charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: bLabels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label}: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#1e293b' } },
+            y: {
+              border: { dash: [4, 4] },
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                color: '#94a3b8',
+                callback: (v) => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)
+              }
+            }
+          }
+        }
+      });
+    }
+
+  // ==========================================
+  // MODE 5: MENSUAL (12 Meses: Ene a Dic)
+  // ==========================================
+  } else {
+    if (titleEl) titleEl.textContent = 'Facturación Mensual';
+    if (subtitleEl) subtitleEl.textContent = 'Comportamiento mensual de datos facturados (Enero a Diciembre)';
+
+    if (legendEl) {
+      legendEl.innerHTML = selectedYearsAsc.map(y => {
+        const color = getVentasYearColor(y);
+        return `
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: ${color}; font-size: 0.78rem;">
+            <span style="width: 14px; height: 3px; background: ${color}; border-radius: 2px;"></span> Año ${y}
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (statChipsEl) {
+      statChipsEl.innerHTML = selectedYearsAsc.map(y => {
+        const tot = getYearTotal(y);
+        const color = getVentasYearColor(y);
+        return `
+          <div class="ventas-chart-stat-chip">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; margin-right:4px;"></span>
+            <strong>${y}:</strong> $${(tot / 1000000).toFixed(2)}M
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (selectedYearsAsc.length === 1) {
+      const targetYear = selectedYearsAsc[0];
+      const salesData = monthNames.map((_, i) => getMonthSales(i + 1, targetYear));
+      const color = getVentasYearColor(targetYear);
+
+      charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: monthNames,
+          datasets: [{
+            label: `Facturación Real (${targetYear})`,
+            data: salesData,
+            backgroundColor: color,
+            borderRadius: 8,
+            barPercentage: 0.6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (c) => ` Facturado: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } },
+            y: {
+              border: { dash: [4, 4] },
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                color: '#94a3b8',
+                callback: (v) => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)
+              }
+            }
+          }
+        }
+      });
+    } else {
+      const datasets = selectedYearsAsc.map(y => {
+        const color = getVentasYearColor(y);
+        const isCurrentYear = (y === 2026);
+        return {
+          label: String(y),
+          data: monthNames.map((_, i) => (y === 2026 && i >= 9 && getMonthSales(i + 1, y) === 0 ? null : getMonthSales(i + 1, y))),
+          borderColor: color,
+          backgroundColor: 'transparent',
+          borderWidth: isCurrentYear ? 3.5 : 2.2,
+          tension: 0.3,
+          pointRadius: isCurrentYear ? 4 : 2.5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: color
+        };
+      });
+
+      charts['chartVentasCustomerHabits'] = new Chart(ctx, {
+        type: 'line',
+        data: { labels: monthNames, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label}: $${Number(c.raw || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } },
+            y: {
+              border: { dash: [4, 4] },
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                color: '#94a3b8',
+                callback: (v) => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+}
+
+function renderProductStatisticChart(company) {
+  destroyChart('chartProductStatistic');
+  const ctx = document.getElementById('chartProductStatistic');
+  if (!ctx) return;
+
+  const companyRecords = allData.filter(r => r.empresa === company);
+  const currentYear = ventasActiveYear || 2026;
+
+  const yearLabel = document.getElementById('v_trimestre_year_label');
+  if (yearLabel) yearLabel.textContent = `Año ${currentYear}`;
+
+  const getMonthSales = (m) => {
+    const mStr = String(m).padStart(2, '0');
+    const rec = companyRecords.find(r => r.periodo === `${mStr}-${currentYear}`);
+    return rec && rec.ventas_totales !== undefined ? Number(rec.ventas_totales) : 0;
+  };
+
+  const q1 = getMonthSales(1) + getMonthSales(2) + getMonthSales(3);
+  const q2 = getMonthSales(4) + getMonthSales(5) + getMonthSales(6);
+  const q3 = getMonthSales(7) + getMonthSales(8) + getMonthSales(9);
+  const q4 = getMonthSales(10) + getMonthSales(11) + getMonthSales(12);
+
+  const totalQuarters = (q1 + q2 + q3 + q4) || 1;
+  const pct1 = ((q1 / totalQuarters) * 100).toFixed(1);
+  const pct2 = ((q2 / totalQuarters) * 100).toFixed(1);
+
+  let labels, chartData, bgColors;
+  const n1 = document.getElementById('v_prod_name_1');
+  const v1 = document.getElementById('v_prod_val_1');
+  const b1 = document.getElementById('v_prod_badge_1');
+  if (n1) n1.textContent = 'Q1 (Ene - Mar)';
+  if (v1) v1.textContent = '$' + q1.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (b1) b1.textContent = `${pct1}%`;
+
+  const n2 = document.getElementById('v_prod_name_2');
+  const v2 = document.getElementById('v_prod_val_2');
+  const b2 = document.getElementById('v_prod_badge_2');
+  if (n2) n2.textContent = 'Q2 (Abr - Jun)';
+  if (v2) v2.textContent = '$' + q2.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (b2) b2.textContent = `${pct2}%`;
+
+  const n3 = document.getElementById('v_prod_name_3');
+  const v3 = document.getElementById('v_prod_val_3');
+  const b3 = document.getElementById('v_prod_badge_3');
+
+  if (q4 > 0) {
+    const q34 = q3 + q4;
+    const pct34 = ((q34 / totalQuarters) * 100).toFixed(1);
+    if (n3) n3.textContent = 'Q3 + Q4 (Jul - Dic)';
+    if (v3) v3.textContent = '$' + q34.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (b3) b3.textContent = `${pct34}%`;
+
+    const pct3 = ((q3 / totalQuarters) * 100).toFixed(1);
+    const pct4 = ((q4 / totalQuarters) * 100).toFixed(1);
+    labels = ['Q1 (Ene-Mar)', 'Q2 (Abr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dic)'];
+    chartData = [Number(pct1), Number(pct2), Number(pct3), Number(pct4)];
+    bgColors = ['#0a3d24', '#127344', '#16935d', '#34d399'];
+  } else {
+    const pct3 = ((q3 / totalQuarters) * 100).toFixed(1);
+    if (n3) n3.textContent = 'Q3 (Jul - Sep)';
+    if (v3) v3.textContent = '$' + q3.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (b3) b3.textContent = `${pct3}%`;
+
+    labels = ['Q1 (Ene-Mar)', 'Q2 (Abr-Jun)', 'Q3 (Jul-Sep)'];
+    chartData = [Number(pct1), Number(pct2), Number(pct3)];
+    bgColors = ['#0a3d24', '#16935d', '#34d399'];
+  }
+
+  // Solid circular pie chart
+  charts['chartProductStatistic'] = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: chartData,
+        backgroundColor: bgColors,
+        borderWidth: 2,
+        borderColor: '#d4ede1',
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0a2f1c',
+          titleFont: { size: 12, weight: '700' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => ` ${ctx.label}: ${ctx.raw}%`
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderCustomerGrowthMetrics(company) {
+  const companyRecords = allData.filter(r => r.empresa === company);
+  const currentYear = ventasActiveYear || 2026;
+
+  const monthNamesFull = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  // Update card header texts
+  const cardTitle = document.getElementById('v_growth_card_title');
+  if (cardTitle) cardTitle.textContent = `Facturación por Mes`;
+
+  const cardSub = document.getElementById('v_growth_card_sub');
+  if (cardSub) cardSub.textContent = `Desglose mensual de monto facturado (${currentYear})`;
+
+  const cardBadge = document.getElementById('v_growth_card_badge');
+  if (cardBadge) cardBadge.textContent = `Año ${currentYear}`;
+
+  const getMonthSales = (m, y) => {
+    const mStr = String(m).padStart(2, '0');
+    const rec = companyRecords.find(r => r.periodo === `${mStr}-${y}`);
+    return rec && rec.ventas_totales !== undefined && Number(rec.ventas_totales) > 0 ? Number(rec.ventas_totales) : 0;
+  };
+
+  // Populate Month and Amount (Mes y Monto) for currentYear
+  const listEl = document.getElementById('v_historical_bars_list');
+  if (listEl) {
+    const monthsData = [];
+    let maxMonthVal = 0;
+
+    for (let m = 1; m <= 12; m++) {
+      const val = getMonthSales(m, currentYear);
+      if (val > maxMonthVal) maxMonthVal = val;
+      monthsData.push({
+        num: m,
+        name: monthNamesFull[m - 1],
+        val: val
+      });
+    }
+
+    if (maxMonthVal === 0) maxMonthVal = 1;
+
+    // Filter to months that have registered sales, or if none, show the first 6
+    const activeMonths = monthsData.filter(d => d.val > 0);
+    const displayList = activeMonths.length > 0 ? activeMonths : monthsData.slice(0, 6);
+
+    listEl.innerHTML = displayList.map(item => {
+      const pct = Math.min(100, Math.round((item.val / maxMonthVal) * 100));
+      const formattedMonto = item.val > 0 
+        ? '$' + item.val.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '$0.00';
+
+      return `
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 7px 12px; background: #f8fafc; border: 1px solid #eef2f6; border-radius: 12px; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem;">
+            <span style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1e293b;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #16935d;"></span>
+              <span>${item.name}</span>
+            </span>
+            <span style="font-weight: 800; color: #0a3d24; font-size: 0.84rem; letter-spacing: -0.01em;">${formattedMonto}</span>
+          </div>
+          <div style="background: #e2e8f0; border-radius: 6px; height: 5px; width: 100%; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #16935d, #0a3d24); height: 100%; width: ${pct}%; border-radius: 6px; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// ===== MODAL VENTAS (CAPTURA Y EDICIÓN DE VENTAS) =====
+let modalVentasCompany = 'GESTIONRH';
+
+function openVentasModal() {
+  modalVentasCompany = ventasActiveCompany || 'GESTIONRH';
+  updateModalVentasCompanyTabs();
+  
+  const yearSelect = document.getElementById('selectVentasYear');
+  if (yearSelect) yearSelect.value = String(ventasActiveYear || 2026);
+
+  renderVentasModalTable();
+
+  const modal = document.getElementById('modalVentas');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeVentasModal() {
+  const modal = document.getElementById('modalVentas');
+  if (modal) modal.style.display = 'none';
+}
+
+function updateModalVentasCompanyTabs() {
+  const badge = document.getElementById('modalVentasCompanyBadge');
+  const sub = document.getElementById('modalVentasSubtitle');
+  const isEHS = modalVentasCompany === 'EHS';
+
+  if (badge) {
+    badge.textContent = isEHS ? 'EHS INTEGRAL' : 'GESTIONRH';
+    badge.style.background = isEHS ? 'rgba(22, 147, 93, 0.12)' : 'rgba(29, 70, 146, 0.12)';
+    badge.style.color = isEHS ? '#16935d' : '#1d4692';
+  }
+
+  if (sub) {
+    sub.textContent = isEHS 
+      ? 'Ingresa o edita la facturación para EHS INTEGRAL' 
+      : 'Ingresa o edita la facturación para GESTIONRH';
+  }
+}
+
+function renderVentasModalTable() {
+  const tbody = document.getElementById('ventasTableBody');
+  if (!tbody) return;
+
+  const year = document.getElementById('selectVentasYear').value || '2026';
+  const companyRecords = allData.filter(r => r.empresa === modalVentasCompany);
+
+  let html = '';
+  for (let m = 0; m < 12; m++) {
+    const mStr = String(m + 1).padStart(2, '0');
+    const key = `${mStr}-${year}`;
+    const rec = companyRecords.find(r => r.periodo === key) || {};
+    
+    const vVal = rec.ventas_totales !== undefined && rec.ventas_totales !== '' ? Number(rec.ventas_totales) : '';
+    const cVal = rec.conversiones_totales !== undefined && rec.conversiones_totales !== '' ? Number(rec.conversiones_totales) : '';
+    const lVal = (Number(rec.conv_whatsapp) || 0) + (Number(rec.conv_llamadas) || 0) + (Number(rec.conv_correos) || 0);
+
+    html += `
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 8px 14px; font-weight: 700; color: #1e293b;">${MONTHS_ES[m]}</td>
+        <td style="padding: 6px 14px;">
+          <input type="number" step="0.01" class="input-ventas-table-val" data-month="${mStr}" value="${vVal}" placeholder="0.00" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; color: #0f172a; font-size: 0.82rem;" />
+        </td>
+        <td style="padding: 6px 14px;">
+          <input type="number" class="input-ventas-table-cierres" data-month="${mStr}" value="${cVal}" placeholder="0" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 0.82rem;" />
+        </td>
+        <td style="padding: 6px 14px;">
+          <input type="number" class="input-ventas-table-leads" data-month="${mStr}" value="${lVal > 0 ? lVal : ''}" placeholder="0" style="width: 100%; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 0.82rem;" />
+        </td>
+      </tr>
+    `;
+  }
+  tbody.innerHTML = html;
+
+  recalculateVentasTableSummary();
+
+  tbody.querySelectorAll('.input-ventas-table-val, .input-ventas-table-cierres, .input-ventas-table-leads').forEach(inp => {
+    inp.addEventListener('input', recalculateVentasTableSummary);
+  });
+}
+
+function recalculateVentasTableSummary() {
+  const vInputs = document.querySelectorAll('.input-ventas-table-val');
+  const cInputs = document.querySelectorAll('.input-ventas-table-cierres');
+  const lInputs = document.querySelectorAll('.input-ventas-table-leads');
+
+  let totalVentas = 0;
+  let monthsWithData = 0;
+  vInputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v) && v > 0) {
+      totalVentas += v;
+      monthsWithData++;
+    }
+  });
+
+  let totalCierres = 0;
+  cInputs.forEach(inp => {
+    const c = parseInt(inp.value);
+    if (!isNaN(c) && c > 0) totalCierres += c;
+  });
+
+  let totalLeads = 0;
+  lInputs.forEach(inp => {
+    const l = parseInt(inp.value);
+    if (!isNaN(l) && l > 0) totalLeads += l;
+  });
+
+  const promedio = monthsWithData > 0 ? (totalVentas / monthsWithData) : 0;
+
+  const totalEl = document.getElementById('tableVentasTotal');
+  if (totalEl) totalEl.textContent = '$' + totalVentas.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const promEl = document.getElementById('tableVentasPromedio');
+  if (promEl) promEl.textContent = '$' + promedio.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ` (${monthsWithData} meses con datos)`;
+
+  const cierresEl = document.getElementById('tableCierresTotal');
+  if (cierresEl) cierresEl.textContent = totalCierres.toLocaleString('es-MX');
+
+  const leadsEl = document.getElementById('tableLeadsTotal');
+  if (leadsEl) leadsEl.textContent = totalLeads.toLocaleString('es-MX');
+}
+
+async function saveVentasAnual() {
+  const year = document.getElementById('selectVentasYear').value || '2026';
+  const vInputs = document.querySelectorAll('.input-ventas-table-val');
+  const cInputs = document.querySelectorAll('.input-ventas-table-cierres');
+  const lInputs = document.querySelectorAll('.input-ventas-table-leads');
+
+  const batchRecords = [];
+
+  for (let m = 0; m < 12; m++) {
+    const mStr = String(m + 1).padStart(2, '0');
+    const periodo = `${mStr}-${year}`;
+    
+    const vVal = vInputs[m] ? vInputs[m].value.trim() : '';
+    const cVal = cInputs[m] ? cInputs[m].value.trim() : '';
+    const lVal = lInputs[m] ? parseInt(lInputs[m].value) || 0 : 0;
+
+    if (vVal !== '' || cVal !== '' || lVal > 0) {
+      const vNum = parseFloat(vVal) || 0;
+      const cNum = parseInt(cVal) || 0;
+      const tNum = (cNum > 0 && vNum > 0) ? Math.round(vNum / cNum) : 0;
+
+      const wp = Math.round(lVal * 0.6);
+      const llam = Math.round(lVal * 0.25);
+      const corr = lVal - wp - llam;
+
+      batchRecords.push({
+        empresa: modalVentasCompany,
+        periodo: periodo,
+        ventas_totales: String(vNum),
+        conversiones_totales: String(cNum),
+        ticket_promedio: String(tNum),
+        conv_whatsapp: String(wp),
+        conv_llamadas: String(llam),
+        conv_correos: String(corr)
+      });
+    }
+  }
+
+  if (batchRecords.length === 0) {
+    showToast('⚠️ No ingresaste ningún dato para guardar', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(batchRecords)
+    });
+
+    if (!res.ok) throw new Error('Error al guardar en el servidor');
+
+    batchRecords.forEach(newRec => {
+      const idx = allData.findIndex(r => r.empresa === newRec.empresa && r.periodo === newRec.periodo);
+      if (idx >= 0) allData[idx] = { ...allData[idx], ...newRec };
+      else allData.push(newRec);
+    });
+    localStorage.setItem('di_data', JSON.stringify(allData));
+
+    showToast('✅ Ventas anuales actualizadas correctamente', 'success');
+    closeVentasModal();
+    renderVentasDashboard(ventasActiveCompany);
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error al guardar datos de ventas', 'error');
+  }
+}
+
+function prefillQuickVentas() {
+  const mSelect = document.getElementById('quickVentasMonth');
+  const ySelect = document.getElementById('quickVentasYear');
+  if (!mSelect || !ySelect) return;
+
+  const key = `${mSelect.value}-${ySelect.value}`;
+  const rec = allData.find(r => r.empresa === modalVentasCompany && r.periodo === key) || {};
+
+  document.getElementById('quickVentasMonto').value = rec.ventas_totales || '';
+  document.getElementById('quickVentasCierres').value = rec.conversiones_totales || '';
+  document.getElementById('quickVentasWp').value = rec.conv_whatsapp || '';
+  
+  const llam = Number(rec.conv_llamadas) || 0;
+  const corr = Number(rec.conv_correos) || 0;
+  document.getElementById('quickVentasOtrosLeads').value = (llam + corr) > 0 ? (llam + corr) : '';
+
+  const meta = Number(rec.gasto_meta_ads) || 0;
+  const goo = Number(rec.gasto_google_ads) || 0;
+  const tt = Number(rec.gasto_tiktok_ads) || 0;
+  document.getElementById('quickVentasAds').value = (meta + goo + tt) > 0 ? (meta + goo + tt) : '';
+}
+
+async function saveQuickVentas() {
+  const m = document.getElementById('quickVentasMonth').value;
+  const y = document.getElementById('quickVentasYear').value;
+  const periodo = `${m}-${y}`;
+
+  const ventas = parseFloat(document.getElementById('quickVentasMonto').value) || 0;
+  const cierres = parseInt(document.getElementById('quickVentasCierres').value) || 0;
+  const ads = parseFloat(document.getElementById('quickVentasAds').value) || 0;
+  const wp = parseInt(document.getElementById('quickVentasWp').value) || 0;
+  const otros = parseInt(document.getElementById('quickVentasOtrosLeads').value) || 0;
+  const ticket = (cierres > 0 && ventas > 0) ? Math.round(ventas / cierres) : 0;
+
+  const record = {
+    empresa: modalVentasCompany,
+    periodo: periodo,
+    ventas_totales: String(ventas),
+    conversiones_totales: String(cierres),
+    ticket_promedio: String(ticket),
+    conv_whatsapp: String(wp),
+    conv_llamadas: String(Math.round(otros * 0.6)),
+    conv_correos: String(otros - Math.round(otros * 0.6)),
+    gasto_meta_ads: String(Math.round(ads * 0.6)),
+    gasto_google_ads: String(Math.round(ads * 0.4))
+  };
+
+  try {
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+
+    if (!res.ok) throw new Error('Error al guardar');
+
+    const idx = allData.findIndex(r => r.empresa === record.empresa && r.periodo === record.periodo);
+    if (idx >= 0) allData[idx] = { ...allData[idx], ...record };
+    else allData.push(record);
+    localStorage.setItem('di_data', JSON.stringify(allData));
+
+    showToast(`✅ Venta registrada para ${periodo}`, 'success');
+    closeVentasModal();
+    renderVentasDashboard(ventasActiveCompany);
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error al guardar venta', 'error');
+  }
 }
 
 // ===== COMPARE CHART =====
@@ -1034,7 +2471,161 @@ function bindEvents() {
     });
   });
 
-  // Period navigation
+  // Sidebar Navigation (Marketing / Ventas EHS / Ventas GRH)
+  const sidebarItems = [
+    { id: 'menuMarketing', name: 'Marketing' },
+    { id: 'menuVentasEHS', name: 'Ventas EHS', company: 'EHS' },
+    { id: 'menuVentasGRH', name: 'Ventas GRH', company: 'GESTIONRH' }
+  ];
+
+  function switchSidebarModule(targetId) {
+    currentSidebarModule = targetId;
+    sidebarItems.forEach(i => {
+      const otherEl = document.getElementById(i.id);
+      if (otherEl) otherEl.classList.toggle('active', i.id === targetId);
+    });
+
+    const mktView = document.getElementById('marketingView');
+    const vtsView = document.getElementById('ventasView');
+
+    if (targetId === 'menuMarketing') {
+      if (mktView) mktView.style.display = 'flex';
+      if (vtsView) vtsView.style.display = 'none';
+      renderDashboard();
+      showToast('📊 Módulo Marketing activo', 'success');
+    } else if (targetId === 'menuVentasEHS') {
+      ventasActiveCompany = 'EHS';
+      if (mktView) mktView.style.display = 'none';
+      if (vtsView) vtsView.style.display = 'flex';
+      renderVentasDashboard('EHS');
+      showToast('💼 Ventas EHS seleccionado', 'info');
+    } else if (targetId === 'menuVentasGRH') {
+      ventasActiveCompany = 'GESTIONRH';
+      if (mktView) mktView.style.display = 'none';
+      if (vtsView) vtsView.style.display = 'flex';
+      renderVentasDashboard('GESTIONRH');
+      showToast('💼 Ventas GestiónRH seleccionado', 'info');
+    }
+  }
+
+  sidebarItems.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (!el) return;
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchSidebarModule(item.id);
+    });
+  });
+
+  // Ventas Annual Period navigation (2022 to 2027)
+  const vPrev = document.getElementById('ventasPrevPeriod');
+  if (vPrev) {
+    vPrev.addEventListener('click', () => {
+      ventasActiveYear--;
+      if (ventasActiveYear < 2022) ventasActiveYear = 2022;
+      renderVentasDashboard(ventasActiveCompany, ventasActiveYear);
+    });
+  }
+  const vNext = document.getElementById('ventasNextPeriod');
+  if (vNext) {
+    vNext.addEventListener('click', () => {
+      ventasActiveYear++;
+      if (ventasActiveYear > 2027) ventasActiveYear = 2027;
+      renderVentasDashboard(ventasActiveCompany, ventasActiveYear);
+    });
+  }
+  const vYearDropdown = document.getElementById('ventasYearDropdown');
+  if (vYearDropdown) {
+    vYearDropdown.addEventListener('change', (e) => {
+      ventasActiveYear = parseInt(e.target.value) || 2026;
+      renderVentasDashboard(ventasActiveCompany, ventasActiveYear);
+    });
+  }
+
+  // Granularity Tabs (General, Anual, Semestral, Bimestral, Mensual)
+  const granularityTabs = document.querySelectorAll('#ventasGranularityTabs .ventas-tab-btn');
+  granularityTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetMode = tab.dataset.granularity;
+      if (targetMode) {
+        ventasChartGranularity = targetMode;
+        renderVentasCustomerHabitsChart(ventasActiveCompany);
+      }
+    });
+  });
+
+  // Modal Ventas Event Bindings
+  const btnOpenVentas = document.getElementById('btnOpenVentasModal');
+  if (btnOpenVentas) btnOpenVentas.addEventListener('click', openVentasModal);
+
+  const btnCloseVentas = document.getElementById('closeModalVentas');
+  if (btnCloseVentas) btnCloseVentas.addEventListener('click', closeVentasModal);
+
+  const btnCancelVentas = document.getElementById('btnCancelVentasModal');
+  if (btnCancelVentas) btnCancelVentas.addEventListener('click', closeVentasModal);
+
+  const btnSaveAnual = document.getElementById('btnSaveVentasAnual');
+  if (btnSaveAnual) btnSaveAnual.addEventListener('click', saveVentasAnual);
+
+  const yearSelect = document.getElementById('selectVentasYear');
+  if (yearSelect) yearSelect.addEventListener('change', renderVentasModalTable);
+
+  // Multi-Year Comparison Popover Events
+  const btnYearCompare = document.getElementById('btnVentasYearCompare');
+  const popoverYearCompare = document.getElementById('ventasYearComparePopover');
+  if (btnYearCompare && popoverYearCompare) {
+    btnYearCompare.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = popoverYearCompare.style.display === 'block';
+      popoverYearCompare.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      const subWrapper = document.getElementById('ventasSubFilterWrapper');
+      if (subWrapper && !subWrapper.contains(e.target)) {
+        popoverYearCompare.style.display = 'none';
+      }
+    });
+
+    // Prevent clicks inside popover from bubbling up to document
+    popoverYearCompare.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  // Presets
+  const btnLast3 = document.getElementById('btnPresetLast3');
+  if (btnLast3) {
+    btnLast3.addEventListener('click', () => {
+      const avail = getAvailableVentasYears(ventasActiveCompany);
+      ventasSelectedYears = avail.slice(0, 3);
+      renderVentasYearComparePopoverUI();
+      renderVentasCustomerHabitsChart(ventasActiveCompany);
+    });
+  }
+
+  const btnAll = document.getElementById('btnPresetAll');
+  if (btnAll) {
+    btnAll.addEventListener('click', () => {
+      const avail = getAvailableVentasYears(ventasActiveCompany);
+      ventasSelectedYears = [...avail];
+      renderVentasYearComparePopoverUI();
+      renderVentasCustomerHabitsChart(ventasActiveCompany);
+    });
+  }
+
+  const btnActiveYear = document.getElementById('btnPresetActiveYear');
+  if (btnActiveYear) {
+    btnActiveYear.addEventListener('click', () => {
+      ventasSelectedYears = [ventasActiveYear || 2026];
+      renderVentasYearComparePopoverUI();
+      renderVentasCustomerHabitsChart(ventasActiveCompany);
+    });
+  }
+
+  // Period navigation (Marketing)
   document.getElementById('prevPeriod').addEventListener('click', () => {
     activePeriod.month--;
     if (activePeriod.month < 0) { activePeriod.month = 11; activePeriod.year--; }

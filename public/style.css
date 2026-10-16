@@ -2,6 +2,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  --primary-green: #16935d;
+  --secondary-blue: #1d4692;
   --blue: #1A73E8;
   --blue-dark: #0D47A1;
   --blue-light: #E8F0FE;
@@ -366,5 +368,384 @@ body { font-family: var(--font); background: var(--bg); color: var(--text-primar
   background: var(--blue);
   color: #fff;
   border-color: var(--blue);
+}
+
+/* ===== MODERN SIDEBAR & LAYOUT (REFERENCE INSPIRED) ===== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #ECEEF0;
+  padding: 16px;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.app-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  position: sticky;
+  top: 16px;
+  height: calc(100vh - 32px);
+  z-index: 50;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.sidebar-brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--primary-green);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(22, 147, 93, 0.35);
+  flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-brand-desc {
+  font-size: 11px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.sidebar-menu-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9CA3AF;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding-left: 12px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #6B7280;
+}
+
+.sidebar-nav-item.active {
+  background: var(--primary-green);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(22, 147, 93, 0.3);
+}
+
+.sidebar-nav-item.active svg {
+  stroke: #FFFFFF;
+}
+
+.sidebar-nav-item:not(.active):hover {
+  background: #F3F4F6;
+  color: #111827;
+}
+
+.sidebar-footer-card {
+  background: linear-gradient(135deg, #092618 0%, #0d2752 100%);
+  border: 1px solid rgba(22, 147, 93, 0.25);
+  border-radius: 18px;
+  padding: 18px 16px;
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-footer-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2ed189;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-footer-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F9FAFB;
+}
+
+.sidebar-footer-desc {
+  font-size: 11px;
+  color: #9CA3AF;
+  line-height: 1.4;
+}
+
+/* App Main Wrapper (Right side) */
+.app-main-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#marketingView {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+#ventasView {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.app-main-wrapper .navbar {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  position: static;
+  background: #FFFFFF;
+}
+
+.app-main-wrapper .subbar {
+  border-radius: 20px;
+  background: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.app-main-wrapper .main-content {
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .app-layout {
+    flex-direction: column;
+    padding: 12px;
+  }
+  .app-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-radius: 20px;
+  }
+}
+
+/* ===== VENTAS SALES REPORT (EXACT REFERENCE DESIGN) ===== */
+.ventas-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1.05fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+#v_historical_bars_list::-webkit-scrollbar {
+  width: 5px;
+}
+#v_historical_bars_list::-webkit-scrollbar-track {
+  background: transparent;
+}
+#v_historical_bars_list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+#v_historical_bars_list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media (max-width: 1100px) {
+  .ventas-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ventas-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .ventas-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .ventas-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ventas-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 20px;
+  line-height: 1.2;
+}
+.ventas-pill-badge.green {
+  background: #22c55e;
+  color: #06351d;
+}
+.ventas-pill-badge.red {
+  background: #ef4444;
+  color: #ffffff;
+}
+.ventas-pill-badge.mint {
+  background: rgba(34, 197, 94, 0.18);
+  color: #15803d;
+}
+
+
+/* ===== VENTAS GRANULARITY TABS (GENERAL, ANUAL, SEMESTRAL, BIMESTRAL, MENSUAL) ===== */
+.ventas-granularity-tabs {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 14px;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.ventas-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  outline: none;
+}
+
+.ventas-tab-btn:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.ventas-tab-btn.active {
+  background: #0a3d24;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(10, 61, 36, 0.25);
+}
+
+.ventas-chart-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+}
+.ventas-chart-stat-chip strong {
+  color: #0f172a;
+}
+
+#v_historical_bars_list::-webkit-scrollbar {
+  width: 4px;
+}
+#v_historical_bars_list::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 4px;
+}
+#v_historical_bars_list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+#v_historical_bars_list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ===== VENTAS MULTI-YEAR COMPARISON POPOVER ===== */
+.ventas-preset-btn {
+  font-size: 0.7rem;
+  padding: 4px 9px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ventas-preset-btn:hover {
+  background: #0a3d24 !important;
+  color: #ffffff !important;
+  border-color: #0a3d24 !important;
+}
+
+.ventas-year-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+.ventas-year-checkbox-item:hover {
+  background: #f1f5f9;
+}
+.ventas-year-checkbox-item input[type="checkbox"] {
+  accent-color: #16935d;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
 }
 

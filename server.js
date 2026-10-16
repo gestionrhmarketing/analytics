@@ -54,50 +54,97 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// In-memory cache & Firestore quota protection
+let memoryCache = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos de caché (reduce lecturas de Firestore en un 99%)
+
 // GET all data
 app.get('/api/data', async (req, res) => {
+  const now = Date.now();
+
+  // 1. Servir desde memoria si el caché está fresco (0 lecturas a Firestore)
+  if (memoryCache && (now - lastCacheTime < CACHE_TTL_MS) && !req.query.force) {
+    return res.json(memoryCache);
+  }
+
   try {
     if (reportsRef) {
+      console.log('📡 Consultando Firestore (Caché expirada o inicializando)...');
       const snapshot = await reportsRef.get();
       const results = [];
       snapshot.forEach(doc => {
         results.push(doc.data());
       });
-      return res.json(results);
-    } else {
-      const localData = getLocalData();
-      return res.json(localData);
+
+      if (results.length > 0) {
+        memoryCache = results;
+        lastCacheTime = now;
+        // Respaldo en disco por si Firebase agota su cuota en el futuro
+        saveLocalData(results);
+        return res.json(results);
+      }
     }
+
+    const localData = getLocalData();
+    memoryCache = localData;
+    lastCacheTime = now;
+    return res.json(localData);
+
   } catch (err) {
-    console.error('Error fetching data:', err);
-    res.json(getLocalData());
+    console.error('⚠️ Error al consultar Firestore (posible cuota diaria agotada):', err.message);
+
+    // Fallback de alta disponibilidad: Si Firebase agota su cuota, usamos la memoria o data-local.json
+    if (memoryCache && memoryCache.length > 0) {
+      console.log('🛡️ Servido desde caché en memoria para proteger la experiencia del usuario.');
+      return res.json(memoryCache);
+    }
+
+    const fallbackLocal = getLocalData();
+    console.log(`🛡️ Servido desde respaldo local data-local.json (${fallbackLocal.length} registros).`);
+    return res.json(fallbackLocal);
   }
 });
 
-// POST save/update a record
+// POST save/update a record (supports single record or array of records)
 app.post('/api/data', async (req, res) => {
   try {
-    const newRecord = req.body;
-    
-    if (!newRecord.empresa || !newRecord.periodo) {
-      return res.status(400).json({ success: false, message: 'Faltan campos obligatorios (empresa o periodo)' });
+    const records = Array.isArray(req.body) ? req.body : [req.body];
+    if (records.length === 0) {
+      return res.status(400).json({ success: false, message: 'No se enviaron datos' });
     }
 
-    if (reportsRef) {
-      // Unique ID for the document: Empresa + Period (e.g. "Google_2024-03")
-      const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
-      await reportsRef.doc(docId).set(newRecord, { merge: true });
-      return res.json({ success: true, message: 'Datos guardados en la nube correctamente' });
-    } else {
-      // Local fallback
-      const localData = getLocalData();
+    // 1. Guardar SIEMPRE en data-local.json como respaldo permanente inmediato
+    const localData = getLocalData();
+    for (const newRecord of records) {
+      if (!newRecord.empresa || !newRecord.periodo) continue;
       const idx = localData.findIndex(r => r.empresa === newRecord.empresa && r.periodo === newRecord.periodo);
       if (idx >= 0) {
         localData[idx] = { ...localData[idx], ...newRecord };
       } else {
         localData.push(newRecord);
       }
-      saveLocalData(localData);
+    }
+    saveLocalData(localData);
+
+    // 2. Actualizar caché en memoria para respuesta instantánea
+    memoryCache = localData;
+    lastCacheTime = Date.now();
+
+    // 3. Sincronizar en Firebase Firestore si está configurado
+    if (reportsRef) {
+      try {
+        for (const newRecord of records) {
+          if (!newRecord.empresa || !newRecord.periodo) continue;
+          const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
+          await reportsRef.doc(docId).set(newRecord, { merge: true });
+        }
+        return res.json({ success: true, message: 'Datos guardados en la nube y respaldados localmente' });
+      } catch (cloudErr) {
+        console.error('⚠️ Error al sincronizar con Firebase (guardado en disco con éxito):', cloudErr.message);
+        return res.json({ success: true, message: 'Guardado localmente (cuota de Firebase agotada o sin conexión)' });
+      }
+    } else {
       return res.json({ success: true, message: 'Datos guardados localmente correctamente' });
     }
   } catch (err) {
