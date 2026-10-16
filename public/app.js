@@ -891,10 +891,23 @@ function getRecordVentasLeads(r) {
 }
 
 // ===== VENTAS DASHBOARD (MATCHING REFERENCE DESIGN) =====
+function updateVentasCompanyTabsUI() {
+  const tabs = document.querySelectorAll('#ventasCompanyTabs .company-tab');
+  tabs.forEach(tab => {
+    if (tab.dataset.company === ventasActiveCompany) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+}
+
 function renderVentasDashboard(company, year) {
   ventasActiveCompany = company || ventasActiveCompany;
   if (year) ventasActiveYear = year;
   const isEHS = ventasActiveCompany === 'EHS';
+
+  updateVentasCompanyTabsUI();
 
   // Header Title & Subtitle
   const titleEl = document.getElementById('ventasTitle');
@@ -2428,19 +2441,28 @@ function renderCompareUI() {
 
 // ===== BIND EVENTS =====
 function bindEvents() {
-  // Company tabs
-  document.querySelectorAll('.company-tab').forEach(btn => {
+  // Marketing Company tabs
+  document.querySelectorAll('#companyTabs .company-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       activeCompany = btn.dataset.company;
       renderDashboard();
     });
   });
 
-  // Sidebar Navigation (Marketing / Ventas EHS / Ventas GRH)
+  // Ventas Company tabs (EHS / GESTIONRH)
+  document.querySelectorAll('#ventasCompanyTabs .company-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      ventasActiveCompany = btn.dataset.company;
+      updateVentasCompanyTabsUI();
+      renderVentasDashboard(ventasActiveCompany);
+      showToast(`💼 Ventas: ${ventasActiveCompany === 'EHS' ? 'EHS INTEGRAL' : 'GESTIONRH'} seleccionado`, 'info');
+    });
+  });
+
+  // Sidebar Navigation (Marketing / Ventas)
   const sidebarItems = [
     { id: 'menuMarketing', name: 'Marketing' },
-    { id: 'menuVentasEHS', name: 'Ventas EHS', company: 'EHS' },
-    { id: 'menuVentasGRH', name: 'Ventas GRH', company: 'GESTIONRH' }
+    { id: 'menuVentas', name: 'Ventas' }
   ];
 
   function switchSidebarModule(targetId) {
@@ -2458,18 +2480,12 @@ function bindEvents() {
       if (vtsView) vtsView.style.display = 'none';
       renderDashboard();
       showToast('📊 Módulo Marketing activo', 'success');
-    } else if (targetId === 'menuVentasEHS') {
-      ventasActiveCompany = 'EHS';
+    } else if (targetId === 'menuVentas') {
       if (mktView) mktView.style.display = 'none';
       if (vtsView) vtsView.style.display = 'flex';
-      renderVentasDashboard('EHS');
-      showToast('💼 Ventas EHS seleccionado', 'info');
-    } else if (targetId === 'menuVentasGRH') {
-      ventasActiveCompany = 'GESTIONRH';
-      if (mktView) mktView.style.display = 'none';
-      if (vtsView) vtsView.style.display = 'flex';
-      renderVentasDashboard('GESTIONRH');
-      showToast('💼 Ventas GestiónRH seleccionado', 'info');
+      renderVentasDashboard(ventasActiveCompany);
+      updateVentasCompanyTabsUI();
+      showToast('💼 Módulo Ventas activo', 'info');
     }
   }
 

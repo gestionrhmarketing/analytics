@@ -71,20 +71,12 @@
         </svg>
         <span>Marketing</span>
       </a>
-      <a href="#" class="sidebar-nav-item" id="menuVentasEHS">
+      <a href="#" class="sidebar-nav-item" id="menuVentas">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <path d="M16 10a4 4 0 0 1-8 0"/>
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
         </svg>
-        <span>Ventas EHS</span>
-      </a>
-      <a href="#" class="sidebar-nav-item" id="menuVentasGRH">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-        </svg>
-        <span>Ventas GRH</span>
+        <span>Ventas</span>
       </a>
     </div>
 
@@ -645,13 +637,24 @@
   <!-- ===== VENTAS VIEW (EHS / GRH) — MATCHING REFERENCE DESIGN ===== -->
   <div id="ventasView" style="display: none; flex-direction: column; gap: 20px;">
     <!-- Ventas Header Bar -->
-    <div style="background: #FFFFFF; border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;">
-      <div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <h1 id="ventasTitle" style="font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Sales Report</h1>
-          <span id="ventasBadgeCompany" style="background: rgba(22, 147, 93, 0.12); color: #16935d; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;">EHS INTEGRAL</span>
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <div>
+          <h1 id="ventasTitle" style="font-size: 1.45rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Sales Report</h1>
+          <p id="ventasDateSubtitle" style="font-size: 0.8rem; color: #6b7280; margin: 3px 0 0; font-weight: 500;">Reporte Anual de Facturación · Ejercicio 2026</p>
         </div>
-        <p id="ventasDateSubtitle" style="font-size: 0.82rem; color: #6b7280; margin: 4px 0 0; font-weight: 500;">Reporte Anual de Facturación · Ejercicio 2026</p>
+
+        <!-- Selector de Empresa para Ventas (EHS / GESTIONRH) -->
+        <div class="company-tabs" id="ventasCompanyTabs">
+          <button class="company-tab active" data-company="EHS" id="vtab-EHS">
+            <img src="/ehs_icon.png" alt="EHS" class="tab-logo" />
+            <span>EHS INTEGRAL</span>
+          </button>
+          <button class="company-tab" data-company="GESTIONRH" id="vtab-GESTIONRH">
+            <img src="/gestionrh_icon.png" alt="GRH" class="tab-logo" />
+            <span>GESTIONRH</span>
+          </button>
+        </div>
       </div>
 
       <!-- Right controls: Period Selector & Profile Indicator -->
@@ -677,25 +680,6 @@
             </select>
           </div>
           <button class="period-nav" id="ventasNextPeriod" title="Siguiente Año" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight: bold;">&#8594;</button>
-        </div>
-
-        <!-- Quick Actions & User Pill (matching image top right) -->
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid #f1f5f9; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer;" title="Buscar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </button>
-          <button style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid #f1f5f9; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer;" title="Notificaciones">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </button>
-          <div style="display: flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #f1f5f9; padding: 4px 12px 4px 4px; border-radius: 20px;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: #0a3d24; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">
-              AS
-            </div>
-            <div style="line-height: 1.1;">
-              <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a;">Antonio Samuel</div>
-              <div style="font-size: 0.65rem; color: #94a3b8;">Admin Officer</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
