@@ -30,14 +30,20 @@ function getLocalData() {
 }
 
 function saveLocalData(data) {
-  fs.writeFileSync(localDataPath, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    fs.writeFileSync(localDataPath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    // En Vercel / serverless el sistema de archivos es read-only (EROFS)
+  }
 }
 
 if (serviceAccount) {
   try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+    }
     db = admin.firestore();
     reportsRef = db.collection('reports');
     console.log('✅ Firebase Admin Initialized');
@@ -114,7 +120,30 @@ app.post('/api/data', async (req, res) => {
       return res.status(400).json({ success: false, message: 'No se enviaron datos' });
     }
 
-    // 1. Guardar SIEMPRE en data-local.json como respaldo permanente inmediato
+    // 1. Guardar en Firebase Firestore con merge: true (preserva todos los demás campos)
+    if (reportsRef) {
+      for (const newRecord of records) {
+        if (!newRecord.empresa || !newRecord.periodo) continue;
+        const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
+        await reportsRef.doc(docId).set(newRecord, { merge: true });
+      }
+    }
+
+    // 2. Actualizar caché en memoria para respuesta instantánea
+    if (memoryCache && Array.isArray(memoryCache)) {
+      for (const newRecord of records) {
+        if (!newRecord.empresa || !newRecord.periodo) continue;
+        const idx = memoryCache.findIndex(r => r.empresa === newRecord.empresa && r.periodo === newRecord.periodo);
+        if (idx >= 0) {
+          memoryCache[idx] = { ...memoryCache[idx], ...newRecord };
+        } else {
+          memoryCache.push(newRecord);
+        }
+      }
+      lastCacheTime = Date.now();
+    }
+
+    // 3. Respaldo local en data-local.json (si el entorno lo permite)
     const localData = getLocalData();
     for (const newRecord of records) {
       if (!newRecord.empresa || !newRecord.periodo) continue;
@@ -127,29 +156,10 @@ app.post('/api/data', async (req, res) => {
     }
     saveLocalData(localData);
 
-    // 2. Actualizar caché en memoria para respuesta instantánea
-    memoryCache = localData;
-    lastCacheTime = Date.now();
-
-    // 3. Sincronizar en Firebase Firestore si está configurado
-    if (reportsRef) {
-      try {
-        for (const newRecord of records) {
-          if (!newRecord.empresa || !newRecord.periodo) continue;
-          const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
-          await reportsRef.doc(docId).set(newRecord, { merge: true });
-        }
-        return res.json({ success: true, message: 'Datos guardados en la nube y respaldados localmente' });
-      } catch (cloudErr) {
-        console.error('⚠️ Error al sincronizar con Firebase (guardado en disco con éxito):', cloudErr.message);
-        return res.json({ success: true, message: 'Guardado localmente (cuota de Firebase agotada o sin conexión)' });
-      }
-    } else {
-      return res.json({ success: true, message: 'Datos guardados localmente correctamente' });
-    }
+    return res.json({ success: true, message: 'Datos guardados correctamente' });
   } catch (err) {
     console.error('Error saving data:', err);
-    res.status(500).json({ success: false, message: 'Error al guardar datos' });
+    res.status(500).json({ success: false, message: 'Error al guardar datos: ' + err.message });
   }
 });
 
