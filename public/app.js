@@ -2165,13 +2165,25 @@ async function saveVentasAnual() {
   }
 
   try {
-    const res = await fetch('/api/data', {
+    let res = await fetch('/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(batchRecords)
     });
 
-    if (!res.ok) throw new Error('Error al guardar en el servidor');
+    if (!res.ok) {
+      // Fallback: Si el servidor solo acepta registros individuales
+      let allSingleOk = true;
+      for (const rec of batchRecords) {
+        const singleRes = await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rec)
+        });
+        if (!singleRes.ok) allSingleOk = false;
+      }
+      if (!allSingleOk) throw new Error('Error al guardar en el servidor');
+    }
 
     batchRecords.forEach(newRec => {
       const idx = allData.findIndex(r => r.empresa === newRec.empresa && r.periodo === newRec.periodo);
@@ -2184,7 +2196,7 @@ async function saveVentasAnual() {
     closeVentasModal();
     renderVentasDashboard(ventasActiveCompany);
   } catch (err) {
-    console.error(err);
+    console.error('Error al guardar ventas:', err);
     showToast('❌ Error al guardar datos de ventas', 'error');
   }
 }
