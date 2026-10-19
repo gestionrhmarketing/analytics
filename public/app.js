@@ -3147,13 +3147,29 @@ function renderIrmpSingle(period) {
   const records = getRecordsForCompany();
   let rec;
   let label;
+  let benchmarkRecords;
 
   if (irmpCompareType === 'month') {
     rec = records.find(r => r.periodo === period) || {};
     label = getPeriodLabel(period);
+    benchmarkRecords = records;
   } else {
     rec = aggregateRecords(getQuarterRecords(period));
     label = getQuarterLabel(period);
+
+    // Calcular todos los trimestres agregados de la empresa activa para usar como base histórica
+    const quartersSet = new Set();
+    records.forEach(r => {
+      if (!r.periodo || !r.periodo.includes('-')) return;
+      const [mStr, yStr] = r.periodo.split('-');
+      const m = parseInt(mStr);
+      const y = parseInt(yStr);
+      if (isNaN(m) || isNaN(y)) return;
+      const q = Math.ceil(m / 3);
+      quartersSet.add(`Q${q}-${y}`);
+    });
+
+    benchmarkRecords = Array.from(quartersSet).map(qKey => aggregateRecords(getQuarterRecords(qKey)));
   }
 
   // Get metrics & maximums to calculate score & display details
@@ -3170,7 +3186,7 @@ function renderIrmpSingle(period) {
   const getVentas = r => parseFloat(r.ventas_totales) || 0;
 
   const getMax = (getter) => {
-    const vals = records.map(getter);
+    const vals = (benchmarkRecords || records).map(getter);
     return Math.max(...vals, 1);
   };
 
@@ -3182,7 +3198,7 @@ function renderIrmpSingle(period) {
   const maxConvCamp = getMax(getConvCamp);
   const maxVentas = getMax(getVentas);
 
-  const irmp = calculateIRMP(rec, records);
+  const irmp = calculateIRMP(rec, benchmarkRecords || records);
 
   // Update Main Gauge
   document.getElementById('irmpValueSingle').textContent = irmp.score + '%';
@@ -3206,6 +3222,7 @@ function renderIrmpSingle(period) {
   // Render Pillars Breakdown HTML
   const container = document.getElementById('irmpPillarsContainer');
   const fmtVal = (val, isCurr) => isCurr ? '$' + val.toLocaleString('es-MX') : val.toLocaleString('es-MX');
+  const maxLabel = irmpCompareType === 'quarter' ? 'Hist. Máx Trimestral' : 'Hist. Máx Mensual';
 
   container.innerHTML = `
     <!-- Atracción (20%) -->
@@ -3217,11 +3234,11 @@ function renderIrmpSingle(period) {
       <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: #4b5563;">
         <div style="display: flex; justify-content: space-between;">
           <span>Impresiones Web (Orgánicas + Ads):</span>
-          <strong>${fmtVal(getWebImp(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxWebImp)})</span></strong>
+          <strong>${fmtVal(getWebImp(rec))} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxWebImp)})</span></strong>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Impresiones Redes Sociales:</span>
-          <strong>${fmtVal(getSocialImp(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxSocialImp)})</span></strong>
+          <strong>${fmtVal(getSocialImp(rec))} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxSocialImp)})</span></strong>
         </div>
       </div>
     </div>
@@ -3235,15 +3252,15 @@ function renderIrmpSingle(period) {
       <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: #4b5563;">
         <div style="display: flex; justify-content: space-between;">
           <span>Visitas Web Totales:</span>
-          <strong>${fmtVal(getWebVisits(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxWebVisits)})</span></strong>
+          <strong>${fmtVal(getWebVisits(rec))} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxWebVisits)})</span></strong>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Interacciones Redes Sociales:</span>
-          <strong>${fmtVal(getSocialInt(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxSocialInt)})</span></strong>
+          <strong>${fmtVal(getSocialInt(rec))} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxSocialInt)})</span></strong>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Contactos Totales (WhatsApp + Llamadas + Correo):</span>
-          <strong>${fmtVal(getTotalContactos(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxContactos)})</span></strong>
+          <strong>${fmtVal(getTotalContactos(rec))} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxContactos)})</span></strong>
         </div>
       </div>
     </div>
@@ -3257,11 +3274,11 @@ function renderIrmpSingle(period) {
       <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: #4b5563;">
         <div style="display: flex; justify-content: space-between;">
           <span>Conversiones de Campaña:</span>
-          <strong>${fmtVal(getConvCamp(rec))} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxConvCamp)})</span></strong>
+          <strong>${fmtVal(getConvCamp(rec))} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxConvCamp)})</span></strong>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Ingresos / Ventas Totales:</span>
-          <strong>${fmtVal(getVentas(rec), true)} <span style="font-weight: normal; color: #9ca3af;">(Hist. Máx: ${fmtVal(maxVentas, true)})</span></strong>
+          <strong>${fmtVal(getVentas(rec), true)} <span style="font-weight: normal; color: #9ca3af;">(${maxLabel}: ${fmtVal(maxVentas, true)})</span></strong>
         </div>
       </div>
     </div>
