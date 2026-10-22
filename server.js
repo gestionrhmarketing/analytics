@@ -16,7 +16,9 @@ if (process.env.FIREBASE_CONFIG) {
 
 let db = null;
 let reportsRef = null;
+let redesRef = null;
 const localDataPath = path.join(__dirname, 'data-local.json');
+const localRedesPath = path.join(__dirname, 'data-redes.json');
 
 function getLocalData() {
   if (fs.existsSync(localDataPath)) {
@@ -37,6 +39,25 @@ function saveLocalData(data) {
   }
 }
 
+function getLocalRedesData() {
+  if (fs.existsSync(localRedesPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(localRedesPath, 'utf8'));
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+}
+
+function saveLocalRedesData(data) {
+  try {
+    fs.writeFileSync(localRedesPath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    // En Vercel / serverless el sistema de archivos es read-only (EROFS)
+  }
+}
+
 if (serviceAccount) {
   try {
     if (!admin.apps.length) {
@@ -46,12 +67,13 @@ if (serviceAccount) {
     }
     db = admin.firestore();
     reportsRef = db.collection('reports');
-    console.log('✅ Firebase Admin Initialized');
+    redesRef = db.collection('redes_sociales');
+    console.log('✅ Firebase Admin Initialized (Colecciones independientes: reports, redes_sociales)');
   } catch (err) {
     console.error('❌ Error initializing Firebase Admin:', err.message);
   }
 } else {
-  console.warn('⚠️ AVISO: No se encontró configuración de Firebase. Se usará almacenamiento local (data-local.json).');
+  console.warn('⚠️ AVISO: No se encontró configuración de Firebase. Se usará almacenamiento local (data-local.json y data-redes.json).');
 }
 
 const app = express();
@@ -63,6 +85,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // In-memory cache & Firestore quota protection
 let memoryCache = null;
 let lastCacheTime = 0;
+let redesMemoryCache = null;
+let lastRedesCacheTime = 0;
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos de caché (reduce lecturas de Firestore en un 99%)
 
 // GET all data
@@ -160,6 +184,98 @@ app.post('/api/data', async (req, res) => {
   } catch (err) {
     console.error('Error saving data:', err);
     res.status(500).json({ success: false, message: 'Error al guardar datos: ' + err.message });
+  }
+});
+
+// ===== REDES SOCIALES API (100% INDEPENDIENTE DE MARKETING Y VENTAS) =====
+// GET all redes data
+app.get('/api/redes', async (req, res) => {
+  const now = Date.now();
+
+  // 1. Servir desde caché en memoria si está fresca
+  if (redesMemoryCache && (now - lastRedesCacheTime < CACHE_TTL_MS) && !req.query.force) {
+    return res.json(redesMemoryCache);
+  }
+
+  try {
+    if (redesRef) {
+      console.log('📡 Consultando Firestore (Colección redes_sociales)...');
+      const snapshot = await redesRef.get();
+      const results = [];
+      snapshot.forEach(doc => {
+        results.push(doc.data());
+      });
+
+      if (results.length > 0) {
+        redesMemoryCache = results;
+        lastRedesCacheTime = now;
+        saveLocalRedesData(results);
+        return res.json(results);
+      }
+    }
+
+    const localData = getLocalRedesData();
+    redesMemoryCache = localData;
+    lastRedesCacheTime = now;
+    return res.json(localData);
+
+  } catch (err) {
+    console.error('⚠️ Error al consultar Firestore redes_sociales:', err.message);
+    if (redesMemoryCache && redesMemoryCache.length > 0) {
+      return res.json(redesMemoryCache);
+    }
+    const fallbackLocal = getLocalRedesData();
+    return res.json(fallbackLocal);
+  }
+});
+
+// POST save/update redes data (aislado en colección 'redes_sociales' y archivo 'data-redes.json')
+app.post('/api/redes', async (req, res) => {
+  try {
+    const records = Array.isArray(req.body) ? req.body : [req.body];
+    if (records.length === 0) {
+      return res.status(400).json({ success: false, message: 'No se enviaron datos de redes' });
+    }
+
+    // 1. Guardar en Firestore en la colección exclusiva 'redes_sociales'
+    if (redesRef) {
+      for (const newRecord of records) {
+        if (!newRecord.empresa || !newRecord.periodo) continue;
+        const docId = `${newRecord.empresa}_${newRecord.periodo}`.replace(/\s+/g, '_');
+        await redesRef.doc(docId).set(newRecord, { merge: true });
+      }
+    }
+
+    // 2. Actualizar caché en memoria de redes
+    if (!redesMemoryCache) redesMemoryCache = getLocalRedesData();
+    for (const newRecord of records) {
+      if (!newRecord.empresa || !newRecord.periodo) continue;
+      const idx = redesMemoryCache.findIndex(r => r.empresa === newRecord.empresa && r.periodo === newRecord.periodo);
+      if (idx >= 0) {
+        redesMemoryCache[idx] = { ...redesMemoryCache[idx], ...newRecord };
+      } else {
+        redesMemoryCache.push(newRecord);
+      }
+    }
+    lastRedesCacheTime = Date.now();
+
+    // 3. Respaldo local en archivo exclusivo data-redes.json
+    const localData = getLocalRedesData();
+    for (const newRecord of records) {
+      if (!newRecord.empresa || !newRecord.periodo) continue;
+      const idx = localData.findIndex(r => r.empresa === newRecord.empresa && r.periodo === newRecord.periodo);
+      if (idx >= 0) {
+        localData[idx] = { ...localData[idx], ...newRecord };
+      } else {
+        localData.push(newRecord);
+      }
+    }
+    saveLocalRedesData(localData);
+
+    return res.json({ success: true, message: 'Estadísticas de redes guardadas en base de datos independiente' });
+  } catch (err) {
+    console.error('Error saving redes data:', err);
+    res.status(500).json({ success: false, message: 'Error al guardar datos de redes: ' + err.message });
   }
 });
 

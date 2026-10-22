@@ -34,6 +34,8 @@ let ventasActiveCompany = 'EHS';
 let ventasActiveYear = 2026;
 let ventasChartGranularity = 'mensual'; // 'general' | 'anual' | 'semestral' | 'bimestral' | 'mensual'
 let ventasSelectedYears = [2024, 2025, 2026];
+let allRedesData = []; // Base de datos 100% independiente para Redes Sociales
+let redesActiveCompany = 'EHS';
 let activeSocialNet = 'ig';
 let activeSocialFormNet = 'ig';
 let charts = {};
@@ -60,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Inicializar datos una vez autenticado
         initPeriod();
-        await loadData();
+        await Promise.all([loadData(), loadRedesData()]);
         setInitialPeriodFromData();
         renderDashboard();
         bindEvents();
@@ -78,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     document.body.style.overflow = 'auto';
     initPeriod();
-    await loadData();
+    await Promise.all([loadData(), loadRedesData()]);
     setInitialPeriodFromData();
     renderDashboard();
     bindEvents();
@@ -144,6 +146,22 @@ async function loadData() {
     console.warn('No se pudo cargar datos del servidor. Usando localStorage.', e);
     const local = localStorage.getItem('di_data');
     allData = local ? JSON.parse(local) : [];
+  }
+}
+
+// Carga de base de datos exclusiva para Redes Sociales
+async function loadRedesData() {
+  try {
+    const res = await fetch('/api/redes');
+    if (!res.ok) {
+      throw new Error('No se pudo obtener datos de redes del servidor');
+    }
+    allRedesData = await res.json();
+    localStorage.setItem('di_redes_data', JSON.stringify(allRedesData));
+  } catch (e) {
+    console.warn('No se pudo cargar datos de redes del servidor. Usando respaldo local.', e);
+    const local = localStorage.getItem('di_redes_data');
+    allRedesData = local ? JSON.parse(local) : [];
   }
 }
 
@@ -213,6 +231,9 @@ async function saveRecord(data) {
 
 // ===== RENDER DASHBOARD =====
 function renderDashboard() {
+  if (currentSidebarModule === 'menuRedes') {
+    renderRedesDashboard(redesActiveCompany);
+  }
   const rec = getCurrentRecord();
   updateBanner();
   renderWebSEO(rec);
@@ -2209,6 +2230,711 @@ async function saveQuickVentas() {
   // Deprecado - sustituido por captura anual independiente
 }
 
+// ===== REDES SOCIALES MODULE (ESTADÍSTICAS SEMANALES EN EMBUDO) =====
+let redesActiveNet = 'all'; // 'all' | 'ig' | 'fb' | 'tt' | 'yt' | 'li'
+let modalRedesActiveNet = 'ig';
+let modalRedesDraft = {};
+
+const REDES_DAILY_FIELDS = [
+  'link_publicacion',
+  'impresiones', 'alcance', 'visualizaciones', 'espectadores_unicos', 'visitas_perfil',
+  'likes', 'comentarios', 'compartidos', 'guardados', 'clics', 'interacciones_totales', 'tasa_interaccion',
+  'tiempo_reproduccion', 'duracion_media', 'porcentaje_visto', 'tasa_finalizacion',
+  'seguidores_iniciales', 'nuevos_seguidores', 'seguidores_perdidos', 'seguidores_finales', 'tasa_crecimiento'
+];
+
+const REDES_NET_META = {
+  all: { name: 'Todas las Redes (Consolidado)', color: '#4f46e5', bg: '#eef2ff' },
+  ig:  { name: 'Instagram', color: '#E1306C', bg: 'rgba(225,48,108,0.1)' },
+  fb:  { name: 'Facebook',  color: '#1877F2', bg: 'rgba(24,119,242,0.1)' },
+  tt:  { name: 'TikTok',    color: '#111827', bg: 'rgba(17,24,39,0.08)' },
+  yt:  { name: 'YouTube',   color: '#FF0000', bg: 'rgba(255,0,0,0.1)' },
+  li:  { name: 'LinkedIn',  color: '#0A66C2', bg: 'rgba(10,102,194,0.1)' }
+};
+
+function getMondayOfDate(d) {
+  if (!d) d = new Date();
+  const dt = (d instanceof Date) ? new Date(d) : new Date(String(d).includes('T') ? d : String(d) + 'T12:00:00');
+  const day = dt.getDay(); // 0 is Sun, 1 is Mon...
+  const diff = day === 0 ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diff);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function getSundayOfMonday(monStr) {
+  const [y, m, d] = monStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + 6);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function getWeekNumber(monStr) {
+  const [y, m, d] = monStr.split('-').map(Number);
+  const target = new Date(y, m - 1, d);
+  const dayNr = (target.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = target.valueOf();
+  target.setMonth(0, 1);
+  if (target.getDay() !== 4) {
+    target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+  }
+  return 1 + Math.ceil((firstThursday - target) / 604800000);
+}
+
+function formatRedesWeekLabel(monStr) {
+  if (!monStr || !monStr.includes('-')) return monStr || '';
+  const monday = getMondayOfDate(monStr);
+  const sunStr = getSundayOfMonday(monday);
+  const [my, mm, md] = monday.split('-').map(Number);
+  const [sy, sm, sd] = sunStr.split('-').map(Number);
+  const weekNum = getWeekNumber(monday);
+
+  if (mm === sm) {
+    return `Semana ${weekNum} (${md} al ${sd} de ${MONTHS_ES[mm - 1]} ${my})`;
+  } else {
+    return `Semana ${weekNum} (${md} de ${MONTHS_ES[mm - 1]} al ${sd} de ${MONTHS_ES[sm - 1]} ${sy})`;
+  }
+}
+
+let redesActiveDate = getMondayOfDate(new Date());
+
+function getRedesEmpresaKey(company) {
+  return `REDES_${company || redesActiveCompany}`;
+}
+
+function formatRedesDateES(dateStr) {
+  return formatRedesWeekLabel(dateStr);
+}
+
+function updateRedesCompanyTabsUI() {
+  const tabs = document.querySelectorAll('#redesCompanyTabs .company-tab');
+  tabs.forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.company === redesActiveCompany);
+  });
+}
+
+function updateRedesPlatformTabsUI() {
+  const tabs = document.querySelectorAll('#redesPlatformTabs .redes-net-tab');
+  tabs.forEach(tab => {
+    const net = tab.dataset.rnet;
+    const isAct = net === redesActiveNet;
+    tab.classList.toggle('active', isAct);
+    const meta = REDES_NET_META[net] || REDES_NET_META.all;
+    if (isAct) {
+      tab.style.background = meta.color;
+      tab.style.borderColor = meta.color;
+      tab.style.color = '#ffffff';
+      const icon = tab.querySelector('i');
+      if (icon) icon.style.color = '#ffffff';
+    } else {
+      tab.style.background = '#f8fafc';
+      tab.style.borderColor = '#e2e8f0';
+      tab.style.color = '#475569';
+      const icon = tab.querySelector('i');
+      if (icon && net !== 'all') icon.style.color = meta.color;
+    }
+  });
+
+  const badge = document.getElementById('redesFunnelPlatformBadge');
+  if (badge) {
+    const meta = REDES_NET_META[redesActiveNet] || REDES_NET_META.all;
+    badge.textContent = meta.name;
+    badge.style.color = meta.color;
+    badge.style.background = meta.bg;
+  }
+}
+
+function getRedesRecordsInScope(company) {
+  const empKey = getRedesEmpresaKey(company);
+  const activeMon = getMondayOfDate(redesActiveDate);
+  const compRecords = allRedesData
+    .filter(r => r.empresa === empKey && r.periodo)
+    .sort((a, b) => a.periodo.localeCompare(b.periodo));
+
+  const found = compRecords.filter(r => r.periodo === activeMon);
+  return {
+    records: found,
+    label: formatRedesWeekLabel(activeMon)
+  };
+}
+
+function computeRedesFunnelAndExtras(records, netFilter) {
+  const nets = netFilter === 'all' ? ['ig', 'fb', 'tt', 'yt', 'li'] : [netFilter];
+
+  const sumMetrics = {
+    impresiones: 0,
+    alcance: 0,
+    visualizaciones: 0,
+    espectadores_unicos: 0,
+    visitas_perfil: 0,
+    likes: 0,
+    comentarios: 0,
+    compartidos: 0,
+    guardados: 0,
+    clics: 0,
+    interacciones_totales: 0,
+    tiempo_reproduccion: 0,
+    nuevos_seguidores: 0,
+    seguidores_perdidos: 0
+  };
+
+  let duracionSum = 0, duracionCount = 0;
+  let pctVistoSum = 0, pctVistoCount = 0;
+  let tasaFinSum = 0, tasaFinCount = 0;
+  let manualTasaIntSum = 0, manualTasaIntCount = 0;
+
+  records.forEach(rec => {
+    nets.forEach(net => {
+      const val = f => parseFloat(rec[`${net}_${f}`]) || 0;
+
+      sumMetrics.impresiones += val('impresiones');
+      sumMetrics.alcance += val('alcance');
+      sumMetrics.visualizaciones += val('visualizaciones');
+      sumMetrics.espectadores_unicos += val('espectadores_unicos');
+      sumMetrics.visitas_perfil += val('visitas_perfil');
+
+      const lk = val('likes');
+      const cm = val('comentarios');
+      const sh = val('compartidos');
+      const sv = val('guardados');
+      const cl = val('clics');
+      const explicitInt = val('interacciones_totales');
+      const calcInt = lk + cm + sh + sv + cl;
+
+      sumMetrics.likes += lk;
+      sumMetrics.comentarios += cm;
+      sumMetrics.compartidos += sh;
+      sumMetrics.guardados += sv;
+      sumMetrics.clics += cl;
+      sumMetrics.interacciones_totales += (explicitInt > 0 ? explicitInt : calcInt);
+
+      const manTasa = val('tasa_interaccion');
+      if (manTasa > 0) {
+        manualTasaIntSum += manTasa;
+        manualTasaIntCount++;
+      }
+
+      sumMetrics.tiempo_reproduccion += val('tiempo_reproduccion');
+
+      const dur = val('duracion_media');
+      if (dur > 0) { duracionSum += dur; duracionCount++; }
+
+      const pv = val('porcentaje_visto');
+      if (pv > 0) { pctVistoSum += pv; pctVistoCount++; }
+
+      const tf = val('tasa_finalizacion');
+      if (tf > 0) { tasaFinSum += tf; tasaFinCount++; }
+
+      sumMetrics.nuevos_seguidores += val('nuevos_seguidores');
+      sumMetrics.seguidores_perdidos += val('seguidores_perdidos');
+    });
+  });
+
+  // Calcular Tasa de Interacción (%)
+  const visibilityBase = sumMetrics.alcance > 0
+    ? sumMetrics.alcance
+    : (sumMetrics.impresiones > 0 ? sumMetrics.impresiones : sumMetrics.visualizaciones);
+
+  let tasa_interaccion = 0;
+  if (visibilityBase > 0) {
+    tasa_interaccion = (sumMetrics.interacciones_totales / visibilityBase) * 100;
+  } else if (manualTasaIntCount > 0) {
+    tasa_interaccion = manualTasaIntSum / manualTasaIntCount;
+  }
+
+  // Calcular Crecimiento de Comunidad por red y sumar
+  let totalSegIniciales = 0;
+  let totalSegFinales = 0;
+
+  nets.forEach(net => {
+    let netInit = 0;
+    let netFinal = 0;
+    let foundInit = false;
+
+    records.forEach(rec => {
+      const ini = parseFloat(rec[`${net}_seguidores_iniciales`]) || 0;
+      const nue = parseFloat(rec[`${net}_nuevos_seguidores`]) || 0;
+      const per = parseFloat(rec[`${net}_seguidores_perdidos`]) || 0;
+      const fin = parseFloat(rec[`${net}_seguidores_finales`]) || 0;
+
+      if (!foundInit && ini > 0) {
+        netInit = ini;
+        foundInit = true;
+      }
+      if (fin > 0) {
+        netFinal = fin;
+      } else if (ini > 0 || nue > 0 || per > 0) {
+        netFinal = (netFinal || ini) + nue - per;
+      }
+    });
+
+    totalSegIniciales += netInit;
+    totalSegFinales += netFinal;
+  });
+
+  if (totalSegFinales === 0 && (totalSegIniciales > 0 || sumMetrics.nuevos_seguidores > 0)) {
+    totalSegFinales = Math.max(0, totalSegIniciales + sumMetrics.nuevos_seguidores - sumMetrics.seguidores_perdidos);
+  }
+
+  const netGrowthDelta = sumMetrics.nuevos_seguidores - sumMetrics.seguidores_perdidos;
+  const tasa_crecimiento = totalSegIniciales > 0
+    ? ((totalSegFinales - totalSegIniciales) / totalSegIniciales) * 100
+    : (netGrowthDelta > 0 ? 100 : 0);
+
+  // % de Engagement sobre Seguidores
+  const followersBase = totalSegFinales > 0 ? totalSegFinales : totalSegIniciales;
+  const engagement_seguidores = followersBase > 0
+    ? (sumMetrics.interacciones_totales / followersBase) * 100
+    : 0;
+
+  return {
+    ...sumMetrics,
+    tasa_interaccion,
+    engagement_seguidores,
+    duracion_media: duracionCount > 0 ? (duracionSum / duracionCount) : 0,
+    porcentaje_visto: pctVistoCount > 0 ? (pctVistoSum / pctVistoCount) : 0,
+    tasa_finalizacion: tasaFinCount > 0 ? (tasaFinSum / tasaFinCount) : 0,
+    seguidores_iniciales: totalSegIniciales,
+    seguidores_finales: totalSegFinales,
+    tasa_crecimiento
+  };
+}
+
+function computeRedesWeeklyComparison(company, activeDateStr, netFilter) {
+  const empKey = getRedesEmpresaKey(company);
+  const compRecords = allRedesData
+    .filter(r => r.empresa === empKey && r.periodo);
+
+  const currMon = getMondayOfDate(activeDateStr || redesActiveDate);
+  const prevDate = new Date(currMon + 'T12:00:00');
+  prevDate.setDate(prevDate.getDate() - 7);
+  const prevMon = getMondayOfDate(prevDate);
+
+  const currRec = compRecords.find(r => r.periodo === currMon);
+  const prevRec = compRecords.find(r => r.periodo === prevMon);
+
+  const currStats = computeRedesFunnelAndExtras(currRec ? [currRec] : [], netFilter);
+  const prevStats = computeRedesFunnelAndExtras(prevRec ? [prevRec] : [], netFilter);
+
+  const currNetFollowers = currStats.nuevos_seguidores - currStats.seguidores_perdidos;
+  const prevNetFollowers = prevStats.nuevos_seguidores - prevStats.seguidores_perdidos;
+
+  const calcPctDelta = (curr, prev) => {
+    if (prev > 0) return ((curr - prev) / prev) * 100;
+    if (curr > 0 && prev === 0) return 100;
+    if (curr === 0 && prev === 0) return 0;
+    return -100;
+  };
+
+  const calcNetDelta = (curr, prev) => {
+    if (prev !== 0) return ((curr - prev) / Math.abs(prev)) * 100;
+    if (curr > 0) return 100;
+    if (curr < 0) return -100;
+    return 0;
+  };
+
+  return {
+    currMon,
+    prevMon,
+    currLabel: formatRedesWeekLabel(currMon),
+    prevLabel: formatRedesWeekLabel(prevMon),
+    alcance: {
+      curr: currStats.alcance,
+      prev: prevStats.alcance,
+      delta: calcPctDelta(currStats.alcance, prevStats.alcance)
+    },
+    interacciones: {
+      curr: currStats.interacciones_totales,
+      prev: prevStats.interacciones_totales,
+      delta: calcPctDelta(currStats.interacciones_totales, prevStats.interacciones_totales)
+    },
+    seguidores: {
+      curr: currNetFollowers,
+      prev: prevNetFollowers,
+      delta: calcNetDelta(currNetFollowers, prevNetFollowers)
+    },
+    engagement: {
+      curr: currStats.tasa_interaccion,
+      prev: prevStats.tasa_interaccion,
+      deltaPP: currStats.tasa_interaccion - prevStats.tasa_interaccion
+    }
+  };
+}
+
+function renderRedesDashboard(company) {
+  if (company) redesActiveCompany = company;
+
+  updateRedesCompanyTabsUI();
+  updateRedesPlatformTabsUI();
+
+  redesActiveDate = getMondayOfDate(redesActiveDate);
+
+  const scope = getRedesRecordsInScope(redesActiveCompany);
+  const data = computeRedesFunnelAndExtras(scope.records, redesActiveNet);
+
+  // Actualizar subtítulo, navegador e insignia
+  const compName = redesActiveCompany === 'EHS' ? 'EHS INTEGRAL' : 'GESTIONRH';
+  setText('redesDateSubtitle', `${compName} · Control Semanal · ${scope.label}`);
+  setText('redesWeekNavLabel', scope.label);
+  setText('redesPeriodInfoBadge', `📅 ${scope.label}`);
+
+  const datePicker = document.getElementById('redesDatePicker');
+  if (datePicker) {
+    datePicker.value = redesActiveDate;
+  }
+
+  const fmtInt = v => Math.round(v || 0).toLocaleString('es-MX');
+  const fmtDec = v => (v || 0).toFixed(2);
+
+  // 1. ATRACCIÓN / VISIBILIDAD
+  setText('rf_impresiones', fmtInt(data.impresiones));
+  setText('rf_alcance', fmtInt(data.alcance));
+  setText('rf_visualizaciones', fmtInt(data.visualizaciones));
+  setText('rf_espectadores_unicos', fmtInt(data.espectadores_unicos));
+  setText('rf_visitas_perfil', fmtInt(data.visitas_perfil));
+
+  // 2. INTERACCIÓN
+  setText('rf_likes', fmtInt(data.likes));
+  setText('rf_comentarios', fmtInt(data.comentarios));
+  setText('rf_compartidos', fmtInt(data.compartidos));
+  setText('rf_guardados', fmtInt(data.guardados));
+  setText('rf_clics', fmtInt(data.clics));
+  setText('rf_interacciones_totales', fmtInt(data.interacciones_totales));
+
+  // Conector & Silueta del Embudo (con los 2 % de engagement abajo)
+  setText('rf_connector_badge', `↓ Tasa de Interacción: ${fmtDec(data.tasa_interaccion)}%`);
+  setText('vf_impresiones', fmtInt(data.impresiones));
+  setText('vf_alcance', fmtInt(data.alcance));
+  setText('vf_visualizaciones', fmtInt(data.visualizaciones));
+  setText('vf_espectadores', fmtInt(data.espectadores_unicos));
+  setText('vf_visitas_perfil', fmtInt(data.visitas_perfil));
+  setText('vf_interacciones', fmtInt(data.interacciones_totales));
+  setText('vf_tasa_resumen', `${fmtDec(data.tasa_interaccion)}%`);
+  setText('vf_engagement_seguidores', `${fmtDec(data.engagement_seguidores)}%`);
+
+  // 3. RETENCIÓN (VIDEOS)
+  setText('rf_tiempo_reproduccion', `${Number(data.tiempo_reproduccion || 0).toLocaleString('es-MX', { maximumFractionDigits: 1 })} min`);
+  setText('rf_duracion_media', `${(data.duracion_media || 0).toFixed(1)} s`);
+  setText('rf_porcentaje_visto', `${(data.porcentaje_visto || 0).toFixed(1)}%`);
+  setText('rf_tasa_finalizacion', `${(data.tasa_finalizacion || 0).toFixed(1)}%`);
+
+  const barPctVisto = document.getElementById('rf_bar_porcentaje_visto');
+  if (barPctVisto) barPctVisto.style.width = `${Math.min(100, Math.max(0, data.porcentaje_visto || 0))}%`;
+
+  const barTasaFin = document.getElementById('rf_bar_tasa_finalizacion');
+  if (barTasaFin) barTasaFin.style.width = `${Math.min(100, Math.max(0, data.tasa_finalizacion || 0))}%`;
+
+  // 4. CRECIMIENTO DE COMUNIDAD
+  setText('rf_seguidores_iniciales', fmtInt(data.seguidores_iniciales));
+  setText('rf_nuevos_seguidores', `+${fmtInt(data.nuevos_seguidores)}`);
+  setText('rf_seguidores_perdidos', `-${fmtInt(data.seguidores_perdidos)}`);
+  setText('rf_seguidores_finales', fmtInt(data.seguidores_finales));
+
+  const growthSign = data.tasa_crecimiento > 0 ? '+' : '';
+  const growthEl = document.getElementById('rf_tasa_crecimiento');
+  if (growthEl) {
+    growthEl.textContent = `${growthSign}${fmtDec(data.tasa_crecimiento)}%`;
+    growthEl.style.color = data.tasa_crecimiento >= 0 ? '#059669' : '#dc2626';
+  }
+
+  // MÉTRICAS DE CRECIMIENTO SEMANAL (Comparadas con la semana anterior)
+  const weekly = computeRedesWeeklyComparison(redesActiveCompany, redesActiveDate, redesActiveNet);
+  setText('rf_weekly_subtitle', `${weekly.currLabel} comparada vs ${weekly.prevLabel}`);
+  setText('rf_weekly_badge', `Semana Activa`);
+
+  const renderBadge = (id, deltaVal, isPP = false) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const sign = deltaVal > 0 ? '+' : '';
+    const unit = isPP ? ' p.p.' : '%';
+    el.textContent = `${sign}${deltaVal.toFixed(1)}${unit}`;
+    if (deltaVal > 0) {
+      el.className = 'ventas-pill-badge green';
+      el.style.background = '#22c55e';
+      el.style.color = '#052e16';
+    } else if (deltaVal < 0) {
+      el.className = 'ventas-pill-badge red';
+      el.style.background = '#ef4444';
+      el.style.color = '#ffffff';
+    } else {
+      el.className = 'ventas-pill-badge';
+      el.style.background = '#f1f5f9';
+      el.style.color = '#64748b';
+    }
+  };
+
+  setText('w_alcance_curr', fmtInt(weekly.alcance.curr));
+  setText('w_alcance_prev', fmtInt(weekly.alcance.prev));
+  renderBadge('w_alcance_delta', weekly.alcance.delta);
+
+  setText('w_interacciones_curr', fmtInt(weekly.interacciones.curr));
+  setText('w_interacciones_prev', fmtInt(weekly.interacciones.prev));
+  renderBadge('w_interacciones_delta', weekly.interacciones.delta);
+
+  const segCurrSign = weekly.seguidores.curr > 0 ? '+' : '';
+  const segPrevSign = weekly.seguidores.prev > 0 ? '+' : '';
+  setText('w_seguidores_curr', `${segCurrSign}${fmtInt(weekly.seguidores.curr)}`);
+  setText('w_seguidores_prev', `${segPrevSign}${fmtInt(weekly.seguidores.prev)}`);
+  renderBadge('w_seguidores_delta', weekly.seguidores.delta);
+
+  setText('w_engagement_curr', `${fmtDec(weekly.engagement.curr)}%`);
+  setText('w_engagement_prev', `${fmtDec(weekly.engagement.prev)}%`);
+  renderBadge('w_engagement_delta', weekly.engagement.deltaPP, true);
+
+  // 5. Renderizar Bitácora Semanal
+  renderRedesDailyHistoryTable();
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function renderRedesDailyHistoryTable() {
+  const tbody = document.getElementById('redesDailyHistoryTableBody');
+  if (!tbody) return;
+
+  const empKey = getRedesEmpresaKey(redesActiveCompany);
+  const compRecords = allRedesData
+    .filter(r => r.empresa === empKey && r.periodo)
+    .sort((a, b) => b.periodo.localeCompare(a.periodo));
+
+  if (compRecords.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="padding: 18px; text-align: center; color: #94a3b8;">
+          Aún no hay semanas registradas para <strong>${redesActiveCompany === 'EHS' ? 'EHS INTEGRAL' : 'GESTIONRH'}</strong>. Haz clic en <strong>"Capturar Estadísticas de la Semana"</strong> arriba.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = compRecords.slice(0, 31).map(rec => {
+    const dayMetrics = computeRedesFunnelAndExtras([rec], redesActiveNet);
+    const isSelected = rec.periodo === redesActiveDate;
+
+    // Obtener link de publicación si existe
+    let postLink = '';
+    if (redesActiveNet !== 'all' && rec[`${redesActiveNet}_link_publicacion`]) {
+      postLink = rec[`${redesActiveNet}_link_publicacion`];
+    } else {
+      for (const net of ['ig', 'fb', 'tt', 'yt', 'li']) {
+        if (rec[`${net}_link_publicacion`]) {
+          postLink = rec[`${net}_link_publicacion`];
+          break;
+        }
+      }
+      if (!postLink && rec.link_publicacion) {
+        postLink = rec.link_publicacion;
+      }
+    }
+
+    const postCell = postLink
+      ? `<a href="${postLink}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:4px; color:#4f46e5; font-weight:700; font-size:0.75rem; text-decoration:none; background:#eef2ff; padding:3px 8px; border-radius:6px; border:1px solid #c7d2fe;" title="${postLink}">🔗 Ver post</a>`
+      : `<span style="color:#94a3b8; font-size:0.75rem;">—</span>`;
+
+    return `
+      <tr style="border-bottom: 1px solid #f1f5f9; background: ${isSelected ? '#eef2ff' : '#ffffff'};">
+        <td style="padding: 10px 14px; font-weight: 700; color: #1e293b;">
+          ${formatRedesWeekLabel(rec.periodo)}
+          ${isSelected ? '<span style="margin-left:6px; font-size:0.68rem; background:#4f46e5; color:#fff; padding:2px 6px; border-radius:6px;">Activa</span>' : ''}
+        </td>
+        <td style="padding: 10px 14px; color: #334155;">
+          ${Math.round(dayMetrics.impresiones).toLocaleString('es-MX')} imp. / ${Math.round(dayMetrics.alcance).toLocaleString('es-MX')} alc.
+        </td>
+        <td style="padding: 10px 14px; color: #334155; font-weight: 600;">
+          ${Math.round(dayMetrics.visualizaciones).toLocaleString('es-MX')}
+        </td>
+        <td style="padding: 10px 14px; color: #be123c; font-weight: 700;">
+          ${Math.round(dayMetrics.interacciones_totales).toLocaleString('es-MX')}
+        </td>
+        <td style="padding: 10px 14px; color: #e11d48; font-weight: 700;">
+          ${dayMetrics.tasa_interaccion.toFixed(2)}%
+        </td>
+        <td style="padding: 10px 14px; color: #065f46; font-weight: 700;">
+          ${Math.round(dayMetrics.seguidores_finales).toLocaleString('es-MX')}
+        </td>
+        <td style="padding: 10px 14px; text-align: center;">
+          ${postCell}
+        </td>
+        <td style="padding: 10px 14px; text-align: right;">
+          <button type="button" onclick="selectRedesDateFromTable('${rec.periodo}', false)" style="border: 1px solid #cbd5e1; background: #fff; color: #334155; font-size: 0.73rem; font-weight: 700; padding: 4px 10px; border-radius: 8px; cursor: pointer; margin-right: 4px;">Ver</button>
+          <button type="button" onclick="selectRedesDateFromTable('${rec.periodo}', true)" style="border: none; background: #4f46e5; color: #fff; font-size: 0.73rem; font-weight: 700; padding: 4px 10px; border-radius: 8px; cursor: pointer;">Editar</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.selectRedesDateFromTable = function(dateStr, openEdit) {
+  redesActiveDate = getMondayOfDate(dateStr);
+  renderRedesDashboard(redesActiveCompany);
+  if (openEdit) {
+    openRedesDiarioModal();
+  }
+};
+
+// ===== MODAL DE CAPTURA SEMANAL DE REDES SOCIALES =====
+function loadDraftForRedesDate(dateStr) {
+  const empKey = getRedesEmpresaKey(redesActiveCompany);
+  const targetMon = getMondayOfDate(dateStr);
+  const existing = allRedesData.find(r => r.empresa === empKey && r.periodo === targetMon) || {};
+  modalRedesDraft = { ...existing, empresa: empKey, periodo: targetMon };
+}
+
+function updateModalRedesLinkPreview() {
+  const input = document.getElementById('mrf_link_publicacion');
+  const anchor = document.getElementById('mrf_link_preview_anchor');
+  if (!input || !anchor) return;
+  const val = (input.value || '').trim();
+  if (val.startsWith('http://') || val.startsWith('https://')) {
+    anchor.href = val;
+    anchor.style.display = 'inline-flex';
+  } else {
+    anchor.style.display = 'none';
+  }
+}
+
+function saveCurrentModalInputsToDraft() {
+  const net = modalRedesActiveNet;
+  REDES_DAILY_FIELDS.forEach(field => {
+    const input = document.getElementById(`mrf_${field}`);
+    if (input) {
+      modalRedesDraft[`${net}_${field}`] = input.value !== '' ? input.value : '';
+    }
+  });
+  const linkVal = document.getElementById('mrf_link_publicacion')?.value?.trim();
+  if (linkVal) {
+    modalRedesDraft.link_publicacion = linkVal;
+  }
+}
+
+function populateModalInputsFromDraft() {
+  const net = modalRedesActiveNet;
+  REDES_DAILY_FIELDS.forEach(field => {
+    const input = document.getElementById(`mrf_${field}`);
+    if (input) {
+      let val = modalRedesDraft[`${net}_${field}`];
+      if ((val === undefined || val === '') && field === 'link_publicacion') {
+        val = modalRedesDraft.link_publicacion || '';
+      }
+      input.value = (val !== undefined && val !== null) ? val : '';
+    }
+  });
+  updateModalRedesLinkPreview();
+}
+
+function updateModalRedesNetTabsUI() {
+  const tabs = document.querySelectorAll('#modalRedesNetTabs .modal-rnet-tab');
+  tabs.forEach(tab => {
+    const net = tab.dataset.mrnet;
+    const isAct = net === modalRedesActiveNet;
+    const meta = REDES_NET_META[net] || REDES_NET_META.ig;
+    tab.classList.toggle('active', isAct);
+    if (isAct) {
+      tab.style.background = meta.color;
+      tab.style.borderColor = meta.color;
+      tab.style.color = '#ffffff';
+    } else {
+      tab.style.background = '#f8fafc';
+      tab.style.borderColor = '#cbd5e1';
+      tab.style.color = '#475569';
+    }
+  });
+}
+
+function recalcModalRedesAutoFields() {
+  const val = id => parseFloat(document.getElementById(id)?.value) || 0;
+
+  // Auto-calcular Interacciones Totales y Tasa de Interacción (%)
+  const totalInt = val('mrf_likes') + val('mrf_comentarios') + val('mrf_compartidos') + val('mrf_guardados') + val('mrf_clics');
+  const intEl = document.getElementById('mrf_interacciones_totales');
+  if (intEl) intEl.value = totalInt > 0 ? totalInt : '';
+
+  const baseVis = val('mrf_alcance') > 0 ? val('mrf_alcance') : (val('mrf_impresiones') > 0 ? val('mrf_impresiones') : val('mrf_visualizaciones'));
+  const tasaIntEl = document.getElementById('mrf_tasa_interaccion');
+  if (tasaIntEl && baseVis > 0) {
+    tasaIntEl.value = ((totalInt / baseVis) * 100).toFixed(2);
+  }
+
+  // Auto-calcular Seguidores Finales y Tasa de Crecimiento (%)
+  const segIni = val('mrf_seguidores_iniciales');
+  const segNue = val('mrf_nuevos_seguidores');
+  const segPer = val('mrf_seguidores_perdidos');
+  if (segIni > 0 || segNue > 0 || segPer > 0) {
+    const segFin = Math.max(0, segIni + segNue - segPer);
+    const finEl = document.getElementById('mrf_seguidores_finales');
+    if (finEl) finEl.value = segFin;
+
+    const tasaCrecEl = document.getElementById('mrf_tasa_crecimiento');
+    if (tasaCrecEl && segIni > 0) {
+      tasaCrecEl.value = (((segFin - segIni) / segIni) * 100).toFixed(2);
+    }
+  }
+}
+
+function openRedesDiarioModal() {
+  const badge = document.getElementById('modalRedesCompanyBadge');
+  if (badge) {
+    badge.textContent = redesActiveCompany === 'EHS' ? 'EHS INTEGRAL' : 'GESTIONRH';
+  }
+
+  redesActiveDate = getMondayOfDate(redesActiveDate);
+
+  const dateInput = document.getElementById('modalRedesDateInput');
+  if (dateInput) dateInput.value = redesActiveDate;
+  setText('modalRedesWeekLabel', formatRedesWeekLabel(redesActiveDate));
+
+  modalRedesActiveNet = redesActiveNet === 'all' ? 'ig' : redesActiveNet;
+  loadDraftForRedesDate(redesActiveDate);
+  updateModalRedesNetTabsUI();
+  populateModalInputsFromDraft();
+
+  openModal('modalRedesDiario');
+}
+
+function closeRedesDiarioModal() {
+  closeModal('modalRedesDiario');
+}
+
+async function saveRedesDiario() {
+  saveCurrentModalInputsToDraft();
+  const dateInput = document.getElementById('modalRedesDateInput');
+  const targetDate = getMondayOfDate((dateInput && dateInput.value) ? dateInput.value : redesActiveDate);
+  const empKey = getRedesEmpresaKey(redesActiveCompany);
+
+  const recordToSave = {
+    ...modalRedesDraft,
+    empresa: empKey,
+    periodo: targetDate,
+    semana_label: formatRedesWeekLabel(targetDate)
+  };
+
+  try {
+    const res = await fetch('/api/redes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(recordToSave)
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.message || 'Error en servidor');
+
+    const idx = allRedesData.findIndex(r => r.empresa === empKey && r.periodo === targetDate);
+    if (idx >= 0) allRedesData[idx] = { ...allRedesData[idx], ...recordToSave };
+    else allRedesData.push(recordToSave);
+
+    localStorage.setItem('di_redes_data', JSON.stringify(allRedesData));
+    redesActiveDate = targetDate;
+    closeRedesDiarioModal();
+    renderRedesDashboard(redesActiveCompany);
+    showToast(`✅ Estadísticas de la ${formatRedesWeekLabel(targetDate)} guardadas`, 'success');
+  } catch (err) {
+    console.error('Error guardando estadísticas de redes:', err);
+    showToast('❌ Error al guardar estadísticas semanales', 'error');
+  }
+}
+
 // ===== COMPARE CHART =====
 let compareType = 'month'; // 'month' or 'quarter'
 let compareState = { periodA: null, periodB: null, selectedIndex: null };
@@ -2471,10 +3197,11 @@ function bindEvents() {
     });
   });
 
-  // Sidebar Navigation (Marketing / Ventas)
+  // Sidebar Navigation (Marketing / Ventas / Redes Sociales)
   const sidebarItems = [
     { id: 'menuMarketing', name: 'Marketing' },
-    { id: 'menuVentas', name: 'Ventas' }
+    { id: 'menuVentas', name: 'Ventas' },
+    { id: 'menuRedes', name: 'Redes Sociales' }
   ];
 
   function switchSidebarModule(targetId) {
@@ -2486,18 +3213,28 @@ function bindEvents() {
 
     const mktView = document.getElementById('marketingView');
     const vtsView = document.getElementById('ventasView');
+    const rdsView = document.getElementById('redesView');
 
     if (targetId === 'menuMarketing') {
       if (mktView) mktView.style.display = 'flex';
       if (vtsView) vtsView.style.display = 'none';
+      if (rdsView) rdsView.style.display = 'none';
       renderDashboard();
       showToast('📊 Módulo Marketing activo', 'success');
     } else if (targetId === 'menuVentas') {
       if (mktView) mktView.style.display = 'none';
       if (vtsView) vtsView.style.display = 'flex';
+      if (rdsView) rdsView.style.display = 'none';
       renderVentasDashboard(ventasActiveCompany);
       updateVentasCompanyTabsUI();
       showToast('💼 Módulo Ventas activo', 'info');
+    } else if (targetId === 'menuRedes') {
+      if (mktView) mktView.style.display = 'none';
+      if (vtsView) vtsView.style.display = 'none';
+      if (rdsView) rdsView.style.display = 'flex';
+      renderRedesDashboard(redesActiveCompany);
+      updateRedesCompanyTabsUI();
+      showToast('📱 Módulo Redes Sociales activo', 'info');
     }
   }
 
@@ -2617,6 +3354,108 @@ function bindEvents() {
       renderVentasCustomerHabitsChart(ventasActiveCompany);
     });
   }
+
+  // Redes Sociales Company tabs (EHS / GESTIONRH)
+  document.querySelectorAll('#redesCompanyTabs .company-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      redesActiveCompany = btn.dataset.company;
+      updateRedesCompanyTabsUI();
+      renderRedesDashboard(redesActiveCompany);
+      showToast(`📱 Redes Sociales: ${redesActiveCompany === 'EHS' ? 'EHS INTEGRAL' : 'GESTIONRH'} seleccionado`, 'info');
+    });
+  });
+
+  // Redes Platform Tabs (Todas + IG, FB, TT, YT, LI)
+  document.querySelectorAll('#redesPlatformTabs .redes-net-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      redesActiveNet = btn.dataset.rnet || 'all';
+      renderRedesDashboard(redesActiveCompany);
+    });
+  });
+
+  // Redes Weekly Navigation (Lunes a Domingo)
+  function shiftRedesWeek(deltaWeeks) {
+    const [y, m, d] = redesActiveDate.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + (deltaWeeks * 7));
+    redesActiveDate = getMondayOfDate(dt);
+    renderRedesDashboard(redesActiveCompany);
+  }
+
+  const rPrev = document.getElementById('redesPrevPeriod');
+  if (rPrev) {
+    rPrev.addEventListener('click', () => shiftRedesWeek(-1));
+  }
+  const rNext = document.getElementById('redesNextPeriod');
+  if (rNext) {
+    rNext.addEventListener('click', () => shiftRedesWeek(1));
+  }
+
+  const rDatePicker = document.getElementById('redesDatePicker');
+  if (rDatePicker) {
+    rDatePicker.value = redesActiveDate;
+    rDatePicker.addEventListener('change', (e) => {
+      if (e.target.value) {
+        redesActiveDate = getMondayOfDate(e.target.value);
+        renderRedesDashboard(redesActiveCompany);
+      }
+    });
+  }
+
+  const rBtnToday = document.getElementById('redesBtnToday');
+  if (rBtnToday) {
+    rBtnToday.addEventListener('click', () => {
+      redesActiveDate = getMondayOfDate(new Date());
+      renderRedesDashboard(redesActiveCompany);
+    });
+  }
+
+  // Modal Redes Semanal Bindings
+  const btnOpenRedes = document.getElementById('btnOpenRedesModal');
+  if (btnOpenRedes) {
+    btnOpenRedes.addEventListener('click', openRedesDiarioModal);
+  }
+
+  const btnCloseRedesModal = document.getElementById('closeModalRedesDiario');
+  if (btnCloseRedesModal) btnCloseRedesModal.addEventListener('click', closeRedesDiarioModal);
+
+  const btnCancelRedesModal = document.getElementById('btnCancelRedesDiario');
+  if (btnCancelRedesModal) btnCancelRedesModal.addEventListener('click', closeRedesDiarioModal);
+
+  const btnSaveRedesModal = document.getElementById('btnSaveRedesDiario');
+  if (btnSaveRedesModal) btnSaveRedesModal.addEventListener('click', saveRedesDiario);
+
+  document.querySelectorAll('#modalRedesNetTabs .modal-rnet-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      saveCurrentModalInputsToDraft();
+      modalRedesActiveNet = btn.dataset.mrnet || 'ig';
+      updateModalRedesNetTabsUI();
+      populateModalInputsFromDraft();
+    });
+  });
+
+  const modalDateInput = document.getElementById('modalRedesDateInput');
+  if (modalDateInput) {
+    modalDateInput.addEventListener('change', (e) => {
+      if (e.target.value) {
+        const mon = getMondayOfDate(e.target.value);
+        modalDateInput.value = mon;
+        setText('modalRedesWeekLabel', formatRedesWeekLabel(mon));
+        loadDraftForRedesDate(mon);
+        populateModalInputsFromDraft();
+      }
+    });
+  }
+
+  // Auto-calculadores en vivo dentro del modal de estadísticas diarias
+  const linkInputEl = document.getElementById('mrf_link_publicacion');
+  if (linkInputEl) linkInputEl.addEventListener('input', updateModalRedesLinkPreview);
+
+  ['mrf_likes', 'mrf_comentarios', 'mrf_compartidos', 'mrf_guardados', 'mrf_clics',
+   'mrf_alcance', 'mrf_impresiones', 'mrf_visualizaciones',
+   'mrf_seguidores_iniciales', 'mrf_nuevos_seguidores', 'mrf_seguidores_perdidos'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalcModalRedesAutoFields);
+  });
 
   // Period navigation (Marketing)
   document.getElementById('prevPeriod').addEventListener('click', () => {

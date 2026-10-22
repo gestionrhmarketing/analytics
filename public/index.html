@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -77,6 +78,16 @@
           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
         </svg>
         <span>Ventas</span>
+      </a>
+      <a href="#" class="sidebar-nav-item" id="menuRedes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"/>
+          <circle cx="6" cy="12" r="3"/>
+          <circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        <span>Redes Sociales</span>
       </a>
     </div>
 
@@ -857,8 +868,758 @@
     </div>
   </div> <!-- /#ventasView -->
 
+  <!-- ===== REDES SOCIALES VIEW (ESTADÍSTICAS DIARIAS EN EMBUDO) ===== -->
+  <div id="redesView" style="display: none; flex-direction: column; gap: 20px;">
+    <!-- Redes Header Bar -->
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 id="redesTitle" style="font-size: 1.45rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Redes Sociales · Estadísticas Semanales</h1>
+            <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;">Embudo Semanal</span>
+          </div>
+          <p id="redesDateSubtitle" style="font-size: 0.8rem; color: #6b7280; margin: 4px 0 0; font-weight: 500;">EHS INTEGRAL · Control Semanal de Visibilidad, Interacción, Video y Comunidad</p>
+        </div>
+
+        <!-- Selector de Empresa para Redes (EHS / GESTIONRH) -->
+        <div class="company-tabs" id="redesCompanyTabs">
+          <button class="company-tab active" data-company="EHS" id="rtab-EHS">
+            <img src="/ehs_icon.png" alt="EHS" class="tab-logo" />
+            <span>EHS INTEGRAL</span>
+          </button>
+          <button class="company-tab" data-company="GESTIONRH" id="rtab-GESTIONRH">
+            <img src="/gestionrh_icon.png" alt="GRH" class="tab-logo" />
+            <span>GESTIONRH</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right controls: Navegación Semanal & Botón de Captura -->
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- Weekly Navigation -->
+        <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 5px 10px; border-radius: 14px; border: 1px solid #e2e8f0;">
+          <button class="period-nav" id="redesPrevPeriod" title="Semana Anterior" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight: bold;">&#8592;</button>
+          <div style="display: flex; align-items: center; gap: 6px; padding: 0 4px; position: relative;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="redesWeekNavLabel" style="font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 800; color: #1e293b; white-space: nowrap;">Semana</span>
+            <input type="date" id="redesDatePicker" title="Saltar a una fecha" style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; left: 0; top: 0;" />
+          </div>
+          <button class="period-nav" id="redesNextPeriod" title="Semana Siguiente" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight: bold;">&#8594;</button>
+          <button type="button" id="redesBtnToday" style="border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 8px; cursor: pointer; margin-left: 2px;">Esta Semana</button>
+        </div>
+
+        <!-- Button: Capturar Estadísticas Semanales -->
+        <button id="btnOpenRedesModal" style="background: linear-gradient(135deg, #E1306C, #F77737); color: #ffffff; border: none; padding: 8px 16px; border-radius: 14px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(225,48,108,0.25); transition: all 0.2s;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Capturar Estadísticas de la Semana</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Selector de Red Social (Todas + 5 Plataformas) -->
+    <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px;">
+      <div id="redesPlatformTabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="redes-net-tab active" data-rnet="all" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #4f46e5; background: #4f46e5; color: #ffffff; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
+          <i class="fas fa-layer-group"></i>
+          <span>Todas las Redes</span>
+        </button>
+        <button type="button" class="redes-net-tab" data-rnet="ig" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
+          <i class="fab fa-instagram" style="color: #E1306C; font-size: 14px;"></i>
+          <span>Instagram</span>
+        </button>
+        <button type="button" class="redes-net-tab" data-rnet="fb" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
+          <i class="fab fa-facebook-f" style="color: #1877F2; font-size: 14px;"></i>
+          <span>Facebook</span>
+        </button>
+        <button type="button" class="redes-net-tab" data-rnet="tt" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
+          <i class="fab fa-tiktok" style="color: #000000; font-size: 14px;"></i>
+          <span>TikTok</span>
+        </button>
+        <button type="button" class="redes-net-tab" data-rnet="yt" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
+          <i class="fab fa-youtube" style="color: #FF0000; font-size: 14px;"></i>
+          <span>YouTube</span>
+        </button>
+        <button type="button" class="redes-net-tab" data-rnet="li" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
+          <i class="fab fa-linkedin-in" style="color: #0A66C2; font-size: 14px;"></i>
+          <span>LinkedIn</span>
+        </button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="redesPeriodInfoBadge" style="background: #f1f5f9; color: #334155; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+          📅 Viendo: Hoy
+        </span>
+      </div>
+    </div>
+
+    <!-- ===== MÉTRICAS DE CRECIMIENTO SEMANAL (TOP 4 KPI CARDS ESTILO VENTAS) ===== -->
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 0 4px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 12px rgba(79,70,229,0.25);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.18rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Crecimiento Semanal · Comparativa vs. Semana Anterior</h2>
+            <p id="rf_weekly_subtitle" style="font-size: 0.78rem; color: #64748b; margin: 2px 0 0; font-weight: 500;">Comparación automática de los 7 días de la semana actual contra los 7 días de la semana previa</p>
+          </div>
+        </div>
+        <span id="rf_weekly_badge" style="background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 14px; border: 1px solid #c7d2fe;">
+          Semana actual vs Semana anterior
+        </span>
+      </div>
+
+      <!-- 4 Key Weekly KPI Cards (Top 4-Column Row) -->
+      <div class="ventas-kpi-grid">
+        
+        <!-- Card 1: Alcance Semanal (DARK INDIGO HERO CARD) -->
+        <div style="background: #1e1b4b; border-radius: 22px; padding: 22px; box-shadow: 0 8px 24px rgba(30,27,75,0.18); display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; position: relative; overflow: hidden;">
+          <div style="position: absolute; right: -15px; bottom: -15px; opacity: 0.08; color: #ffffff; pointer-events: none;">
+            <svg width="130" height="130" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffffff; color: #1e1b4b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <span id="w_alcance_delta" class="ventas-pill-badge green">+0.0%</span>
+          </div>
+          
+          <div style="margin-top: 14px;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.75); text-transform: capitalize; letter-spacing: 0.02em;">Alcance Semanal</div>
+            <div id="w_alcance_curr" style="font-size: 1.85rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin-top: 2px;">0</div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.65); margin-top: 4px; font-weight: 500;">Semana anterior: <strong id="w_alcance_prev" style="color: #ffffff;">0</strong></div>
+          </div>
+        </div>
+
+        <!-- Card 2: Interacciones Semanales (White Card) -->
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <span id="w_interacciones_delta" class="ventas-pill-badge green">+0.0%</span>
+          </div>
+          
+          <div style="margin-top: 14px;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: capitalize; letter-spacing: 0.02em;">Interacciones Totales</div>
+            <div id="w_interacciones_curr" style="font-size: 1.85rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; margin-top: 2px;">0</div>
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; font-weight: 500;">Semana anterior: <strong id="w_interacciones_prev" style="color: #1e293b;">0</strong></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Crecimiento Neto de Seguidores (White Card) -->
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            </div>
+            <span id="w_seguidores_delta" class="ventas-pill-badge green">+0.0%</span>
+          </div>
+          
+          <div style="margin-top: 14px;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: capitalize; letter-spacing: 0.02em;">Seguidores Ganados (Neto)</div>
+            <div id="w_seguidores_curr" style="font-size: 1.85rem; font-weight: 800; color: #059669; letter-spacing: -0.02em; margin-top: 2px;">+0</div>
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; font-weight: 500;">Semana anterior: <strong id="w_seguidores_prev" style="color: #1e293b;">0</strong></div>
+          </div>
+        </div>
+
+        <!-- Card 4: % Tasa de Engagement (White Card) -->
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            </div>
+            <span id="w_engagement_delta" class="ventas-pill-badge green">+0.0 p.p.</span>
+          </div>
+          
+          <div style="margin-top: 14px;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: capitalize; letter-spacing: 0.02em;">Tasa de Engagement</div>
+            <div id="w_engagement_curr" style="font-size: 1.85rem; font-weight: 800; color: #4f46e5; letter-spacing: -0.02em; margin-top: 2px;">0.00%</div>
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; font-weight: 500;">Semana anterior: <strong id="w_engagement_prev" style="color: #1e293b;">0.00%</strong></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== SECCIÓN PRINCIPAL: EMBUDO DE CONVERSIÓN (ATRACCIÓN -> INTERACCIÓN) ===== -->
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 26px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-flex; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #4f46e5, #ec4899); color: #fff; align-items: center; justify-content: center; font-size: 14px;">▽</span>
+            Embudo de Rendimiento en Redes Sociales
+          </h2>
+          <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0;">Flujo desde el impacto visual y alcance hasta la acción e interacción del usuario</p>
+        </div>
+        <div id="redesFunnelPlatformBadge" style="background: #eef2ff; color: #4f46e5; font-weight: 800; font-size: 0.78rem; padding: 6px 14px; border-radius: 20px;">
+          Todas las Redes (Consolidado)
+        </div>
+      </div>
+
+      <!-- Layout del Embudo: Izquierda Escalones del Embudo / Derecha Pirámide Visual Proporcional -->
+      <div style="display: grid; grid-template-columns: 1.65fr 1fr; gap: 24px; align-items: stretch;">
+        
+        <!-- LADO IZQUIERDO: EMBUDO ESTRUCTURADO EN 2 NIVELES -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          
+          <!-- NIVEL 1: ATRACCIÓN / VISIBILIDAD (100% ANCHO) -->
+          <div style="width: 100%; background: linear-gradient(180deg, #f5f7ff 0%, #eef2ff 100%); border: 2px solid #c7d2fe; border-radius: 20px; padding: 20px; box-sizing: border-box; position: relative;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid #dbeafe; padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #fff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em;">ETAPA 1</span>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e1b4b; letter-spacing: -0.01em;">ATRACCIÓN / VISIBILIDAD</h3>
+              </div>
+              <span style="font-size: 0.75rem; color: #4338ca; font-weight: 600;">Exposición y descubrimiento de marca</span>
+            </div>
+
+            <!-- 5 Métricas de Atracción / Visibilidad -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px;">
+              <!-- Impresiones -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Impresiones</span>
+                  <i class="fas fa-eye" style="color: #6366f1;"></i>
+                </div>
+                <div id="rf_impresiones" style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px;">0</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Cuando disponibles</div>
+              </div>
+
+              <!-- Alcance -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Alcance</span>
+                  <i class="fas fa-broadcast-tower" style="color: #4f46e5;"></i>
+                </div>
+                <div id="rf_alcance" style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px;">0</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Cuentas alcanzadas</div>
+              </div>
+
+              <!-- Visualizaciones / reproducciones -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Visualizaciones</span>
+                  <i class="fas fa-play-circle" style="color: #3b82f6;"></i>
+                </div>
+                <div id="rf_visualizaciones" style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px;">0</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Reproducciones</div>
+              </div>
+
+              <!-- Espectadores únicos -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Espectadores Únicos</span>
+                  <i class="fas fa-user-check" style="color: #0ea5e9;"></i>
+                </div>
+                <div id="rf_espectadores_unicos" style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px;">0</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Usuarios distintos</div>
+              </div>
+
+              <!-- Visitas al perfil -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Visitas al Perfil</span>
+                  <i class="fas fa-id-badge" style="color: #8b5cf6;"></i>
+                </div>
+                <div id="rf_visitas_perfil" style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin: 6px 0 2px;">0</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Interés en cuenta</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONECTOR CUELLO DEL EMBUDO -->
+          <div style="width: 82%; height: 38px; background: linear-gradient(180deg, rgba(199,210,254,0.5) 0%, rgba(254,205,211,0.6) 100%); clip-path: polygon(0 0, 100% 0, 93% 100%, 7% 100%); display: flex; align-items: center; justify-content: center;">
+            <span id="rf_connector_badge" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 14px; font-size: 0.73rem; font-weight: 800; color: #be123c; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+              ↓ Conversión a Interacción: 0.00%
+            </span>
+          </div>
+
+          <!-- NIVEL 2: INTERACCIÓN (88% ANCHO CENTRADO PARA FORMA DE EMBUDO) -->
+          <div style="width: 90%; background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fecdd3; border-radius: 20px; padding: 20px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid #fecdd3; padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #e11d48; color: #fff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em;">ETAPA 2</span>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #881337; letter-spacing: -0.01em;">INTERACCIÓN</h3>
+              </div>
+              <span style="font-size: 0.75rem; color: #be123c; font-weight: 600;">Respuesta activa y compromiso (Engagement)</span>
+            </div>
+
+            <!-- 5 Métricas operativas de Interacción -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px;">
+              <!-- Me gusta / reacciones -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Me gusta / Reacc.</span>
+                  <i class="fas fa-heart" style="color: #e11d48;"></i>
+                </div>
+                <div id="rf_likes" style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-top: 5px;">0</div>
+              </div>
+
+              <!-- Comentarios -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Comentarios</span>
+                  <i class="fas fa-comment-dots" style="color: #f97316;"></i>
+                </div>
+                <div id="rf_comentarios" style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-top: 5px;">0</div>
+              </div>
+
+              <!-- Compartidos -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Compartidos</span>
+                  <i class="fas fa-share-nodes" style="color: #8b5cf6;"></i>
+                </div>
+                <div id="rf_compartidos" style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-top: 5px;">0</div>
+              </div>
+
+              <!-- Guardados -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Guardados</span>
+                  <i class="fas fa-bookmark" style="color: #eab308;"></i>
+                </div>
+                <div id="rf_guardados" style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-top: 5px;">0</div>
+              </div>
+
+              <!-- Clics -->
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Clics</span>
+                  <i class="fas fa-mouse-pointer" style="color: #10b981;"></i>
+                </div>
+                <div id="rf_clics" style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-top: 5px;">0</div>
+              </div>
+            </div>
+
+            <!-- Base del Embudo de Interacción: Interacciones Totales -->
+            <div style="background: #ffffff; border-radius: 16px; padding: 14px 18px; border: 2px solid #fda4af; box-shadow: 0 4px 12px rgba(225,29,72,0.08); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 800; color: #be123c; text-transform: uppercase;">Interacciones Totales</div>
+                <div style="font-size: 0.7rem; color: #64748b;">Suma de acciones (likes, comentarios, compartidos, guardados y clics)</div>
+              </div>
+              <div id="rf_interacciones_totales" style="font-size: 1.65rem; font-weight: 900; color: #881337;">0</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LADO DERECHO: SILUETA VISUAL DEL EMBUDO (PROPORCIÓN ESCALONADA) -->
+        <div style="background: #f8fafc; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b; margin: 0 0 4px 0; text-align: center;">Silueta del Embudo</h3>
+            <p style="font-size: 0.75rem; color: #64748b; margin: 0 0 18px 0; text-align: center;">Representación centrada por escalón de volumen</p>
+          </div>
+
+          <div id="redesVisualFunnelBars" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: auto 0; width: 100%;">
+            <!-- Escalón 1: Impresiones -->
+            <div style="width: 100%; background: linear-gradient(90deg, #4338ca, #6366f1); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box; box-shadow: 0 2px 8px rgba(79,70,229,0.2);">
+              <span>1. Impresiones</span>
+              <span id="vf_impresiones">0</span>
+            </div>
+            <!-- Escalón 2: Alcance -->
+            <div style="width: 88%; background: linear-gradient(90deg, #4f46e5, #818cf8); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box;">
+              <span>2. Alcance</span>
+              <span id="vf_alcance">0</span>
+            </div>
+            <!-- Escalón 3: Visualizaciones -->
+            <div style="width: 76%; background: linear-gradient(90deg, #2563eb, #60a5fa); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box;">
+              <span>3. Visualizaciones</span>
+              <span id="vf_visualizaciones">0</span>
+            </div>
+            <!-- Escalón 4: Espectadores Únicos -->
+            <div style="width: 64%; background: linear-gradient(90deg, #0284c7, #38bdf8); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; box-sizing: border-box;">
+              <span>4. Espectadores Únicos</span>
+              <span id="vf_espectadores">0</span>
+            </div>
+            <!-- Escalón 5: Visitas al Perfil -->
+            <div style="width: 52%; background: linear-gradient(90deg, #9333ea, #c084fc); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; box-sizing: border-box;">
+              <span>5. Visitas al Perfil</span>
+              <span id="vf_visitas_perfil">0</span>
+            </div>
+            <!-- Escalón 6: Interacciones Totales -->
+            <div style="width: 42%; min-width: 190px; background: linear-gradient(90deg, #e11d48, #fb7185); color: white; padding: 11px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 800; box-sizing: border-box; box-shadow: 0 4px 12px rgba(225,29,72,0.28);">
+              <span>6. Interacciones</span>
+              <span id="vf_interacciones">0</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; color: #475569; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">
+              <div>
+                <strong style="color: #0f172a; font-size: 0.78rem;">% Engagement sobre Alcance</strong>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Interacciones / Alcance</div>
+              </div>
+              <strong id="vf_tasa_resumen" style="color: #e11d48; font-size: 1.1rem; font-weight: 900;">0.00%</strong>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; color: #475569;">
+              <div>
+                <strong style="color: #0f172a; font-size: 0.78rem;">% Engagement sobre Seguidores</strong>
+                <div style="font-size: 0.68rem; color: #94a3b8;">Interacciones / Comunidad</div>
+              </div>
+              <strong id="vf_engagement_seguidores" style="color: #be123c; font-size: 1.1rem; font-weight: 900;">0.00%</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== DATOS APARTE DEL EMBUDO: RETENCIÓN (VIDEOS) & CRECIMIENTO DE COMUNIDAD ===== -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px;">
+      
+      <!-- BLOQUE APARTE 1: RETENCIÓN (VIDEOS) -->
+      <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(139, 92, 246, 0.12); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+              <i class="fas fa-film"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">RETENCIÓN (VIDEOS)</h3>
+              <p style="margin: 2px 0 0; font-size: 0.76rem; color: #64748b;">Métricas independientes de permanencia y consumo de video</p>
+            </div>
+          </div>
+          <span style="background: #f5f3ff; color: #6d28d9; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 10px;">Datos Aparte</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <!-- Tiempo total de reproducción -->
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+              <span>Tiempo Total Reproducción</span>
+              <i class="fas fa-clock" style="color: #7c3aed;"></i>
+            </div>
+            <div id="rf_tiempo_reproduccion" style="font-size: 1.45rem; font-weight: 800; color: #1e293b; margin: 8px 0 2px;">0 min</div>
+            <div style="font-size: 0.7rem; color: #94a3b8;">Tiempo acumulado visto</div>
+          </div>
+
+          <!-- Duración media de visualización -->
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
+              <span>Duración Media Visualización</span>
+              <i class="fas fa-stopwatch" style="color: #8b5cf6;"></i>
+            </div>
+            <div id="rf_duracion_media" style="font-size: 1.45rem; font-weight: 800; color: #1e293b; margin: 8px 0 2px;">0.0 s</div>
+            <div style="font-size: 0.7rem; color: #94a3b8;">Promedio por reproducción</div>
+          </div>
+
+          <!-- Porcentaje promedio visto -->
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.74rem; font-weight: 700; color: #64748b;">Porcentaje Promedio Visto</span>
+              <span id="rf_porcentaje_visto" style="font-size: 1.2rem; font-weight: 800; color: #6d28d9;">0.0%</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;">
+              <div id="rf_bar_porcentaje_visto" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #6d28d9); border-radius: 99px; transition: width 0.3s;"></div>
+            </div>
+          </div>
+
+          <!-- Tasa de finalización -->
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.74rem; font-weight: 700; color: #64748b;">Tasa de Finalización</span>
+              <span id="rf_tasa_finalizacion" style="font-size: 1.2rem; font-weight: 800; color: #ec4899;">0.0%</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;">
+              <div id="rf_bar_tasa_finalizacion" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ec4899, #be185d); border-radius: 99px; transition: width 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOQUE APARTE 2: CRECIMIENTO DE COMUNIDAD -->
+      <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+              <i class="fas fa-users"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">CRECIMIENTO DE COMUNIDAD</h3>
+              <p style="margin: 2px 0 0; font-size: 0.76rem; color: #64748b;">Variación neta de seguidores y tasa de crecimiento</p>
+            </div>
+          </div>
+          <span style="background: #ecfdf5; color: #059669; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 10px;">Datos Aparte</span>
+        </div>
+
+        <!-- 3 Bloques Superiores: Iniciales, Nuevos, Perdidos -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div style="background: #f8fafc; border-radius: 14px; padding: 12px 14px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #64748b;">Seguidores Iniciales</div>
+            <div id="rf_seguidores_iniciales" style="font-size: 1.3rem; font-weight: 800; color: #1e293b; margin-top: 6px;">0</div>
+          </div>
+
+          <div style="background: #f0fdf4; border-radius: 14px; padding: 12px 14px; border: 1px solid #bbf7d0;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #15803d;">+ Nuevos Seguidores</div>
+            <div id="rf_nuevos_seguidores" style="font-size: 1.3rem; font-weight: 800; color: #16a34a; margin-top: 6px;">+0</div>
+          </div>
+
+          <div style="background: #fef2f2; border-radius: 14px; padding: 12px 14px; border: 1px solid #fecaca;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #b91c1c;">- Seguidores Perdidos</div>
+            <div id="rf_seguidores_perdidos" style="font-size: 1.3rem; font-weight: 800; color: #dc2626; margin-top: 6px;">-0</div>
+          </div>
+        </div>
+
+        <!-- 2 Bloques Inferiores: Seguidores Finales & Tasa de Crecimiento (%) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); border-radius: 16px; padding: 14px 18px; border: 1px solid #a7f3d0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-right: 1px solid #cbd5e1; padding-right: 12px;">
+            <div>
+              <div style="font-size: 0.74rem; font-weight: 800; color: #065f46; text-transform: uppercase;">Seguidores Finales</div>
+              <div style="font-size: 0.68rem; color: #64748b;">Cierre del periodo</div>
+            </div>
+            <div id="rf_seguidores_finales" style="font-size: 1.55rem; font-weight: 900; color: #064e3b;">0</div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding-left: 6px;">
+            <div>
+              <div style="font-size: 0.74rem; font-weight: 800; color: #065f46; text-transform: uppercase;">Tasa de Crecimiento</div>
+              <div style="font-size: 0.68rem; color: #64748b;">Crecimiento neto (%)</div>
+            </div>
+            <div id="rf_tasa_crecimiento" style="font-size: 1.5rem; font-weight: 900; color: #059669; background: #ffffff; padding: 4px 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">0.00%</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== BITÁCORA DE REGISTROS SEMANALES ===== -->
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 22px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">Bitácora de Semanas Registradas</h3>
+          <p style="margin: 2px 0 0; font-size: 0.76rem; color: #64748b;">Historial de estadísticas semanales. Haz clic en "Ver" o "Editar" para consultar o modificar cualquier semana</p>
+        </div>
+      </div>
+      <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 14px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
+          <thead>
+            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569;">
+              <th style="padding: 10px 14px; font-weight: 700;">Semana</th>
+              <th style="padding: 10px 14px; font-weight: 700;">Impresiones / Alcance</th>
+              <th style="padding: 10px 14px; font-weight: 700;">Visualizaciones</th>
+              <th style="padding: 10px 14px; font-weight: 700;">Interacciones Totales</th>
+              <th style="padding: 10px 14px; font-weight: 700;">% Engagement</th>
+              <th style="padding: 10px 14px; font-weight: 700;">Seguidores Finales</th>
+              <th style="padding: 10px 14px; font-weight: 700;">Publicación</th>
+              <th style="padding: 10px 14px; font-weight: 700; text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="redesDailyHistoryTableBody">
+            <tr>
+              <td colspan="8" style="padding: 18px; text-align: center; color: #94a3b8;">Aún no hay semanas registradas para esta empresa. Usa el botón "Capturar Estadísticas de la Semana".</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div> <!-- /#redesView -->
+
   </div> <!-- /.app-main-wrapper -->
 </div> <!-- /.app-layout -->
+
+<!-- ===== MODAL: CAPTURAR ESTADÍSTICAS SEMANALES DE REDES SOCIALES ===== -->
+<div class="modal-overlay" id="modalRedesDiario">
+  <div class="modal modal-large" style="max-width: 880px; max-height: 92vh; overflow-y: auto;">
+    <button class="modal-close" id="closeModalRedesDiario">&times;</button>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h2 class="modal-title" style="margin: 0;">Captura de Estadísticas Semanales · Redes Sociales</h2>
+          <span id="modalRedesCompanyBadge" style="background: rgba(79, 70, 229, 0.12); color: #4f46e5; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;">EHS INTEGRAL</span>
+        </div>
+        <p class="modal-subtitle" style="margin: 4px 0 0;">Registra las métricas consolidadas de la semana, retención de video, comunidad y link del post</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+        <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 6px 12px; border-radius: 12px; border: 1px solid #cbd5e1;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #334155;">Semana (Lunes):</label>
+          <input type="date" id="modalRedesDateInput" style="border: none; background: transparent; font-weight: 800; font-size: 0.85rem; color: #0f172a; outline: none; cursor: pointer;" />
+        </div>
+        <span id="modalRedesWeekLabel" style="font-size: 0.72rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 2px 8px; border-radius: 6px;">Semana</span>
+      </div>
+    </div>
+
+    <!-- Pestañas de Plataforma dentro del Modal -->
+    <div id="modalRedesNetTabs" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+      <button type="button" class="modal-rnet-tab active" data-mrnet="ig" style="padding: 8px 16px; border-radius: 10px; border: 1px solid #E1306C; background: #E1306C; color: #fff; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="fab fa-instagram"></i> Instagram
+      </button>
+      <button type="button" class="modal-rnet-tab" data-mrnet="fb" style="padding: 8px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="fab fa-facebook-f"></i> Facebook
+      </button>
+      <button type="button" class="modal-rnet-tab" data-mrnet="tt" style="padding: 8px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="fab fa-tiktok"></i> TikTok
+      </button>
+      <button type="button" class="modal-rnet-tab" data-mrnet="yt" style="padding: 8px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="fab fa-youtube"></i> YouTube
+      </button>
+      <button type="button" class="modal-rnet-tab" data-mrnet="li" style="padding: 8px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="fab fa-linkedin-in"></i> LinkedIn
+      </button>
+    </div>
+
+    <!-- Enlace / URL de la Publicación Destacada de la Semana -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px;">
+      <div class="form-group" style="margin: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <label style="font-size: 0.76rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px; margin: 0;">
+            <i class="fas fa-link" style="color: #4f46e5;"></i> Link / URL de la Publicación Destacada de la Semana (opcional)
+          </label>
+          <a id="mrf_link_preview_anchor" href="#" target="_blank" rel="noopener" style="display: none; color: #4f46e5; font-size: 0.72rem; text-decoration: none; font-weight: 700; align-items: center; gap: 4px;">
+            <i class="fas fa-external-link-alt"></i> Probar enlace
+          </a>
+        </div>
+        <input type="url" id="mrf_link_publicacion" class="form-input" placeholder="https://www.instagram.com/p/... o enlace al video / post" style="background: #ffffff;" />
+      </div>
+    </div>
+
+    <!-- Formulario de las 4 Secciones -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      
+      <!-- 1. ATRACCIÓN / VISIBILIDAD -->
+      <div style="background: #f5f7ff; border: 1px solid #c7d2fe; border-radius: 14px; padding: 14px 16px;">
+        <div style="font-size: 0.82rem; font-weight: 800; color: #3730a3; margin-bottom: 10px; text-transform: uppercase;">
+          1. Embudo — Atracción / Visibilidad
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Impresiones (si disponible)</label>
+            <input type="number" id="mrf_impresiones" class="form-input" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Alcance</label>
+            <input type="number" id="mrf_alcance" class="form-input" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Visualizaciones / Reprod.</label>
+            <input type="number" id="mrf_visualizaciones" class="form-input" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Espectadores Únicos</label>
+            <input type="number" id="mrf_espectadores_unicos" class="form-input" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Visitas al Perfil</label>
+            <input type="number" id="mrf_visitas_perfil" class="form-input" placeholder="0" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. INTERACCIÓN -->
+      <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 14px; padding: 14px 16px;">
+        <div style="font-size: 0.82rem; font-weight: 800; color: #9f1239; margin-bottom: 10px; text-transform: uppercase;">
+          2. Embudo — Interacción
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Me gusta / Reacciones</label>
+            <input type="number" id="mrf_likes" class="form-input mrf-calc-trigger" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Comentarios</label>
+            <input type="number" id="mrf_comentarios" class="form-input mrf-calc-trigger" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Compartidos</label>
+            <input type="number" id="mrf_compartidos" class="form-input mrf-calc-trigger" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Guardados</label>
+            <input type="number" id="mrf_guardados" class="form-input mrf-calc-trigger" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem;">Clics</label>
+            <input type="number" id="mrf_clics" class="form-input mrf-calc-trigger" placeholder="0" min="0" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem; font-weight: 800; color: #be123c;">Interacciones Totales</label>
+            <input type="number" id="mrf_interacciones_totales" class="form-input" placeholder="Auto" style="background: #ffffff; font-weight: 800; border-color: #fda4af;" />
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.74rem; font-weight: 800; color: #be123c;">Tasa Interacción (%)</label>
+            <input type="number" step="0.01" id="mrf_tasa_interaccion" class="form-input" placeholder="Auto %" style="background: #ffffff; font-weight: 800; border-color: #fda4af;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. RETENCIÓN (VIDEOS) & 4. CRECIMIENTO DE COMUNIDAD -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px;">
+        
+        <!-- 3. RETENCIÓN (VIDEOS) -->
+        <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 14px; padding: 14px 16px;">
+          <div style="font-size: 0.82rem; font-weight: 800; color: #6b21a8; margin-bottom: 10px; text-transform: uppercase;">
+            3. Retención (Videos) — Aparte del Embudo
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Tiempo Total Reprod. (min)</label>
+              <input type="number" step="0.1" id="mrf_tiempo_reproduccion" class="form-input" placeholder="0" min="0" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Duración Media Vis. (seg)</label>
+              <input type="number" step="0.1" id="mrf_duracion_media" class="form-input" placeholder="0.0" min="0" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Porcentaje Prom. Visto (%)</label>
+              <input type="number" step="0.1" id="mrf_porcentaje_visto" class="form-input" placeholder="0.0" min="0" max="100" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Tasa de Finalización (%)</label>
+              <input type="number" step="0.1" id="mrf_tasa_finalizacion" class="form-input" placeholder="0.0" min="0" max="100" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. CRECIMIENTO DE COMUNIDAD -->
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 14px; padding: 14px 16px;">
+          <div style="font-size: 0.82rem; font-weight: 800; color: #065f46; margin-bottom: 10px; text-transform: uppercase;">
+            4. Crecimiento de Comunidad — Aparte del Embudo
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Seguidores Iniciales</label>
+              <input type="number" id="mrf_seguidores_iniciales" class="form-input mrf-comm-trigger" placeholder="0" min="0" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Nuevos Seguidores</label>
+              <input type="number" id="mrf_nuevos_seguidores" class="form-input mrf-comm-trigger" placeholder="0" min="0" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem;">Seguidores Perdidos</label>
+              <input type="number" id="mrf_seguidores_perdidos" class="form-input mrf-comm-trigger" placeholder="0" min="0" />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem; font-weight: 800; color: #065f46;">Seguidores Finales</label>
+              <input type="number" id="mrf_seguidores_finales" class="form-input" placeholder="Auto" style="background: #ffffff; font-weight: 800; border-color: #6ee7b7;" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.73rem; font-weight: 800; color: #065f46;">Tasa Crecimiento (%)</label>
+              <input type="number" step="0.01" id="mrf_tasa_crecimiento" class="form-input" placeholder="Auto %" style="background: #ffffff; font-weight: 800; border-color: #6ee7b7;" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 0.75rem; color: #64748b;">💡 Puedes cambiar de pestaña de red social arriba; tus cambios en cada red se conservan antes de guardar la semana.</span>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="btnCancelRedesDiario" style="padding: 9px 18px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-weight: 600; cursor: pointer;">Cancelar</button>
+          <button type="button" id="btnSaveRedesDiario" style="padding: 9px 24px; border-radius: 10px; border: none; background: linear-gradient(135deg, #4f46e5, #ec4899); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(79,70,229,0.3);">
+            💾 Guardar Estadísticas de la Semana
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- ===== MODAL: CAPTURAR / EDITAR VENTAS COMERCIALES ===== -->
 <div class="modal-overlay" id="modalVentas">
