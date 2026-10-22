@@ -43,6 +43,102 @@ let irmpCompareType = 'month';
 let growthCompareType = 'month';
 let activitiesCompareType = 'month';
 
+// ===== AUTH CONFIGURATION & USERS =====
+const AUTH_USERS = [
+  {
+    username: 'Admin',
+    aliases: ['admin'],
+    password: '4dm1n2026$',
+    name: 'Administrador',
+    role: 'admin',
+    desc: 'Acceso Total (Mkt, Ventas, Redes)'
+  },
+  {
+    username: 'Saul Peña',
+    aliases: ['saul peña', 'saul pena', 'saul', 'saulpena'],
+    password: 'DASaulS-2026$',
+    name: 'Saul Peña',
+    role: 'redes_only',
+    desc: 'Acceso Exclusivo: Redes Sociales'
+  }
+];
+
+function authenticateUser(inputUser, inputPass) {
+  const cleanUser = (inputUser || '').trim().toLowerCase();
+  return AUTH_USERS.find(u => {
+    const matchName = u.username.toLowerCase() === cleanUser || (u.aliases && u.aliases.includes(cleanUser));
+    return matchName && u.password === inputPass;
+  });
+}
+
+function applyUserPermissions() {
+  const role = localStorage.getItem('di_user_role') || 'admin';
+  const name = localStorage.getItem('di_user_name') || (role === 'redes_only' ? 'Saul Peña' : 'Administrador');
+  const tagEl = document.getElementById('sidebarUserRoleTag');
+  const nameEl = document.getElementById('sidebarUserName');
+  const descEl = document.getElementById('sidebarUserDesc');
+  const mktEl = document.getElementById('menuMarketing');
+  const vtsEl = document.getElementById('menuVentas');
+  const rdsEl = document.getElementById('menuRedes');
+
+  if (role === 'redes_only') {
+    if (tagEl) tagEl.textContent = 'Acceso Redes';
+    if (nameEl) nameEl.textContent = name;
+    if (descEl) descEl.textContent = 'Módulo Exclusivo: Redes Sociales';
+
+    // Bloquear menú Marketing visualmente
+    if (mktEl) {
+      mktEl.classList.add('locked');
+      mktEl.classList.remove('active');
+      mktEl.setAttribute('title', '🔒 Módulo bloqueado: Solo tienes permisos para Redes Sociales');
+      let badge = mktEl.querySelector('.lock-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'lock-badge';
+        badge.innerHTML = '🔒 Bloqueado';
+        mktEl.appendChild(badge);
+      }
+    }
+
+    // Bloquear menú Ventas visualmente
+    if (vtsEl) {
+      vtsEl.classList.add('locked');
+      vtsEl.classList.remove('active');
+      vtsEl.setAttribute('title', '🔒 Módulo bloqueado: Solo tienes permisos para Redes Sociales');
+      let badge = vtsEl.querySelector('.lock-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'lock-badge';
+        badge.innerHTML = '🔒 Bloqueado';
+        vtsEl.appendChild(badge);
+      }
+    }
+
+    // Activar Redes
+    if (rdsEl) {
+      rdsEl.classList.add('active');
+    }
+  } else {
+    // Admin
+    if (tagEl) tagEl.textContent = 'Administrador';
+    if (nameEl) nameEl.textContent = name;
+    if (descEl) descEl.textContent = 'Acceso Total (Mkt, Ventas, Redes)';
+
+    if (mktEl) {
+      mktEl.classList.remove('locked');
+      mktEl.removeAttribute('title');
+      const b = mktEl.querySelector('.lock-badge');
+      if (b) b.remove();
+    }
+    if (vtsEl) {
+      vtsEl.classList.remove('locked');
+      vtsEl.removeAttribute('title');
+      const b = vtsEl.querySelector('.lock-badge');
+      if (b) b.remove();
+    }
+  }
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
   // Bind Login Form Event
@@ -54,18 +150,58 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pass = document.getElementById('loginPass').value;
       const errorDiv = document.getElementById('loginError');
 
-      if (user === 'Admin' && pass === '4dm1n2026$') {
+      // 1. Intentar autenticación (soporta Admin y Saul Peña)
+      let matchedUser = authenticateUser(user, pass);
+
+      // Si hay soporte de backend API, también se puede verificar
+      if (!matchedUser) {
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.user) {
+              matchedUser = data.user;
+            }
+          }
+        } catch (apiErr) {
+          console.warn('Login API offline, fallback a credenciales locales:', apiErr);
+        }
+      }
+
+      if (matchedUser) {
         localStorage.setItem('di_logged_in', 'true');
+        localStorage.setItem('di_user_role', matchedUser.role);
+        localStorage.setItem('di_user_name', matchedUser.name);
+
         document.getElementById('loginOverlay').style.display = 'none';
         document.body.style.overflow = 'auto';
-        showToast('🔓 Acceso concedido', 'success');
+        showToast(`🔓 Bienvenido, ${matchedUser.name}`, 'success');
         
         // Inicializar datos una vez autenticado
         initPeriod();
         await Promise.all([loadData(), loadRedesData()]);
         setInitialPeriodFromData();
-        renderDashboard();
         bindEvents();
+        applyUserPermissions();
+
+        if (matchedUser.role === 'redes_only') {
+          // Saul Peña va directo a Redes Sociales con Marketing y Ventas bloqueados
+          const mktView = document.getElementById('marketingView');
+          const vtsView = document.getElementById('ventasView');
+          const rdsView = document.getElementById('redesView');
+          if (mktView) mktView.style.display = 'none';
+          if (vtsView) vtsView.style.display = 'none';
+          if (rdsView) rdsView.style.display = 'flex';
+          currentSidebarModule = 'menuRedes';
+          renderRedesDashboard(redesActiveCompany);
+          updateRedesCompanyTabsUI();
+        } else {
+          renderDashboard();
+        }
       } else {
         errorDiv.style.display = 'block';
         document.getElementById('loginPass').value = '';
@@ -82,8 +218,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     initPeriod();
     await Promise.all([loadData(), loadRedesData()]);
     setInitialPeriodFromData();
-    renderDashboard();
     bindEvents();
+    applyUserPermissions();
+
+    const role = localStorage.getItem('di_user_role') || 'admin';
+    if (role === 'redes_only') {
+      const mktView = document.getElementById('marketingView');
+      const vtsView = document.getElementById('ventasView');
+      const rdsView = document.getElementById('redesView');
+      if (mktView) mktView.style.display = 'none';
+      if (vtsView) vtsView.style.display = 'none';
+      if (rdsView) rdsView.style.display = 'flex';
+      currentSidebarModule = 'menuRedes';
+      renderRedesDashboard(redesActiveCompany);
+      updateRedesCompanyTabsUI();
+    } else {
+      renderDashboard();
+    }
   } else {
     document.body.style.overflow = 'hidden';
   }
@@ -197,7 +348,10 @@ async function saveRecord(data) {
   try {
     const res = await fetch('/api/data', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Role': localStorage.getItem('di_user_role') || 'admin'
+      },
       body: JSON.stringify(record)
     });
     if (!res.ok) {
@@ -2022,6 +2176,12 @@ function renderCustomerGrowthMetrics(company) {
 let modalVentasCompany = 'GESTIONRH';
 
 function openVentasModal() {
+  const role = localStorage.getItem('di_user_role') || 'admin';
+  if (role === 'redes_only') {
+    showToast('🔒 Módulo bloqueado: Tu usuario solo tiene permisos para Redes Sociales', 'error');
+    return;
+  }
+
   modalVentasCompany = ventasActiveCompany || 'GESTIONRH';
   updateModalVentasCompanyTabs();
   
@@ -2188,7 +2348,10 @@ async function saveVentasAnual() {
   try {
     let res = await fetch('/api/data', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Role': localStorage.getItem('di_user_role') || 'admin'
+      },
       body: JSON.stringify(batchRecords)
     });
 
@@ -2198,7 +2361,10 @@ async function saveVentasAnual() {
       for (const rec of batchRecords) {
         const singleRes = await fetch('/api/data', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Role': localStorage.getItem('di_user_role') || 'admin'
+          },
           body: JSON.stringify(rec)
         });
         if (!singleRes.ok) allSingleOk = false;
@@ -3205,6 +3371,12 @@ function bindEvents() {
   ];
 
   function switchSidebarModule(targetId) {
+    const role = localStorage.getItem('di_user_role') || 'admin';
+    if (role === 'redes_only' && (targetId === 'menuMarketing' || targetId === 'menuVentas')) {
+      showToast('🔒 Módulo bloqueado: Tu usuario solo tiene permisos para Redes Sociales', 'error');
+      return;
+    }
+
     currentSidebarModule = targetId;
     sidebarItems.forEach(i => {
       const otherEl = document.getElementById(i.id);
@@ -3243,9 +3415,29 @@ function bindEvents() {
     if (!el) return;
     el.addEventListener('click', (e) => {
       e.preventDefault();
+      const role = localStorage.getItem('di_user_role') || 'admin';
+      if (role === 'redes_only' && (item.id === 'menuMarketing' || item.id === 'menuVentas')) {
+        showToast('🔒 Módulo bloqueado: Tu usuario solo tiene permisos para Redes Sociales', 'error');
+        return;
+      }
       switchSidebarModule(item.id);
     });
   });
+
+  // Logout button in sidebar
+  const btnLogout = document.getElementById('sidebarBtnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('di_logged_in');
+      localStorage.removeItem('di_user_role');
+      localStorage.removeItem('di_user_name');
+      showToast('Sesión cerrada correctamente', 'info');
+      setTimeout(() => {
+        location.reload();
+      }, 350);
+    });
+  }
 
   // Ventas Annual Period navigation (2022 to 2027)
   const vPrev = document.getElementById('ventasPrevPeriod');
@@ -3627,6 +3819,12 @@ function bindEvents() {
 
 // ===== REGISTER MODAL =====
 function openRegisterModal() {
+  const role = localStorage.getItem('di_user_role') || 'admin';
+  if (role === 'redes_only') {
+    showToast('🔒 Módulo bloqueado: Tu usuario solo tiene permisos para Redes Sociales', 'error');
+    return;
+  }
+
   document.getElementById('registerSubtitle').textContent = `${COMPANIES[activeCompany].name} — ${MONTHS_ES[activePeriod.month]} ${activePeriod.year}`;
 
   // Pre-fill with existing data
@@ -3767,6 +3965,11 @@ function handleSubmitRegister() {
 
 // ===== COMPARE MODAL =====
 function openCompareModal() {
+  const role = localStorage.getItem('di_user_role') || 'admin';
+  if (role === 'redes_only') {
+    showToast('🔒 Módulo bloqueado: Tu usuario solo tiene permisos para Redes Sociales', 'error');
+    return;
+  }
   const records = getRecordsForCompany();
   if (records.length < 1) { showToast('No hay datos suficientes para comparar', 'error'); return; }
 
@@ -3930,6 +4133,11 @@ function calculateIRMP(rec, records) {
 }
 
 function openIrmpModal() {
+  const role = localStorage.getItem('di_user_role') || 'admin';
+  if (role === 'redes_only') {
+    showToast('🔒 Módulo bloqueado: Tu usuario solo tiene permisos para Redes Sociales', 'error');
+    return;
+  }
   irmpCompareType = 'month';
   document.getElementById('btnIrmpTypeMonth').classList.add('active');
   document.getElementById('btnIrmpTypeQuarter').classList.remove('active');

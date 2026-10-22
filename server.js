@@ -89,6 +89,49 @@ let redesMemoryCache = null;
 let lastRedesCacheTime = 0;
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos de caché (reduce lecturas de Firestore en un 99%)
 
+// ===== AUTENTICACIÓN Y USUARIOS =====
+const AUTH_USERS = [
+  {
+    username: 'Admin',
+    aliases: ['admin'],
+    password: '4dm1n2026$',
+    name: 'Administrador',
+    role: 'admin',
+    allowedModules: ['marketing', 'ventas', 'redes']
+  },
+  {
+    username: 'Saul Peña',
+    aliases: ['saul peña', 'saul pena', 'saul'],
+    password: 'DASaulS-2026$',
+    name: 'Saul Peña',
+    role: 'redes_only',
+    allowedModules: ['redes']
+  }
+];
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body || {};
+  const cleanUser = (username || '').trim().toLowerCase();
+  const found = AUTH_USERS.find(u => 
+    (u.username.toLowerCase() === cleanUser || (u.aliases && u.aliases.includes(cleanUser))) &&
+    u.password === password
+  );
+
+  if (!found) {
+    return res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
+  }
+
+  return res.json({
+    success: true,
+    user: {
+      username: found.username,
+      name: found.name,
+      role: found.role,
+      allowedModules: found.allowedModules
+    }
+  });
+});
+
 // GET all data
 app.get('/api/data', async (req, res) => {
   const now = Date.now();
@@ -139,6 +182,12 @@ app.get('/api/data', async (req, res) => {
 // POST save/update a record (supports single record or array of records)
 app.post('/api/data', async (req, res) => {
   try {
+    // Control de permisos a nivel servidor
+    const userRole = req.headers['x-user-role'];
+    if (userRole === 'redes_only') {
+      return res.status(403).json({ success: false, message: 'Acceso denegado: Usuario sin permisos para modificar Marketing o Ventas' });
+    }
+
     const records = Array.isArray(req.body) ? req.body : [req.body];
     if (records.length === 0) {
       return res.status(400).json({ success: false, message: 'No se enviaron datos' });

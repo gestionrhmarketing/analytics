@@ -92,10 +92,16 @@
     </div>
 
     <!-- Bottom Info Card -->
-    <div class="sidebar-footer-card">
-      <div class="sidebar-footer-tag">Insights Pro</div>
-      <div class="sidebar-footer-title">Dashboard Activo</div>
-      <div class="sidebar-footer-desc">Métricas y rendimiento digital</div>
+    <div class="sidebar-footer-card" id="sidebarUserCard">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+        <div class="sidebar-footer-tag" id="sidebarUserRoleTag">Insights Pro</div>
+        <button type="button" id="sidebarBtnLogout" title="Cerrar sesión" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Salir</span>
+        </button>
+      </div>
+      <div class="sidebar-footer-title" id="sidebarUserName">Dashboard Activo</div>
+      <div class="sidebar-footer-desc" id="sidebarUserDesc">Métricas y rendimiento digital</div>
     </div>
   </aside>
 
