@@ -36,17 +36,25 @@ body.ui-theme {
 .ui-theme ::selection { background: var(--accent); color: #fff; }
 .ui-theme .app-layout { background: var(--canvas); }
 
-/* Dark navigation, a single blue active state and quiet supporting text. */
-.ui-theme .app-sidebar { background: #191c17; box-shadow: none; border-radius: 22px; }
-.ui-theme .sidebar-brand-icon { background: var(--accent); color: #fff; box-shadow: none; }
+/* Company accents follow the existing selected tabs without changing application logic. */
+.ui-theme #marketingView:has(#tab-GESTIONRH.active),
+.ui-theme #ventasView:has(#vtab-GESTIONRH.active),
+.ui-theme #redesView:has(#rtab-GESTIONRH.active) {
+  --accent: #e12122;
+  --accent-hover: #bf1b1c;
+}
+
+/* Dark gray navigation retains its original green selection, independent of company. */
+.ui-theme .app-sidebar { --accent: #d3f56b; background: #191c17; box-shadow: none; border-radius: 22px; }
+.ui-theme .sidebar-brand-icon { background: var(--accent); color: var(--ink); box-shadow: none; }
 .ui-theme .sidebar-brand-name { color: #f8faf4; letter-spacing: -.025em; }
 .ui-theme .sidebar-brand-desc, .ui-theme .sidebar-menu-header { color: #a9b19f; }
 .ui-theme .sidebar-nav-item { color: #c7cdbf; font-weight: 500; }
-.ui-theme .sidebar-nav-item.active { background: var(--accent); color: #fff; box-shadow: none; }
-.ui-theme .sidebar-nav-item.active svg { stroke: #fff; }
+.ui-theme .sidebar-nav-item.active { background: var(--accent); color: var(--ink); box-shadow: none; }
+.ui-theme .sidebar-nav-item.active svg { stroke: var(--ink); }
 .ui-theme .sidebar-nav-item:not(.active):hover { background: #30362b; color: #fff; }
 .ui-theme .sidebar-footer-card { background: #262c21; border-color: #3a4232; box-shadow: none; border-radius: 14px; }
-.ui-theme .sidebar-footer-tag { color: #b6d7f1; }
+.ui-theme .sidebar-footer-tag { color: var(--accent); }
 .ui-theme .sidebar-footer-desc { color: #b5bdac; }
 .ui-theme #sidebarBtnLogout { background: transparent !important; border-color: #68735c !important; color: #e0e7d7 !important; }
 
