@@ -12,6 +12,8 @@ test('account and company permissions', async t => {
   const root = path.resolve(__dirname, '..');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'analytics-access-'));
   fs.copyFileSync(path.join(root, 'server.js'), path.join(dir, 'server.js'));
+  fs.mkdirSync(path.join(dir, 'public'));
+  fs.copyFileSync(path.join(root, 'public/sales-activity-model.js'), path.join(dir, 'public/sales-activity-model.js'));
   fs.symlinkSync(path.join(root, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
   const seed = [
     { empresa: 'EHS', periodo: '01-2027', comercial_facturacion: '100', web_visitas: 999 },
@@ -99,4 +101,26 @@ test('account and company permissions', async t => {
     assert.equal((await request('/api/DATA/', cookie)).status, 403);
     assert.equal((await request('/api/redes', cookie)).status, 200);
   });
+  await t.test('new activity fields persist for each company and reject invalid or cross-company batches atomically', async () => {
+    for (const [username, password, company] of credentials) {
+      const login = await request('/api/login', null, 'POST', { username, password });
+      const cookie = login.headers.get('set-cookie').split(';')[0];
+      const record = { empresa: company, periodo: '02-2027', comercial_leads: 20, comercial_cotizaciones: 10,
+        comercial_seguimientos: 12, comercial_cierres: 3, comercial_oportunidades_campanas: 8,
+        comercial_cotizaciones_mkt: 6, comercial_cotizaciones_directas: 4,
+        comercial_productos_cotizados: [{ nombre: `${company} Producto`, cantidad: 5 }],
+        comercial_cotizaciones_detalle: [{ referencia: `${company} Cotización`, monto: 45000.50 }] };
+      assert.equal((await request('/api/data', cookie, 'POST', record)).status, 200);
+      const rows = await (await request('/api/data', cookie)).json();
+      assert.deepEqual(rows.find(r => r.periodo === record.periodo), record);
+      assert.ok(rows.every(r => r.empresa === company));
+      assert.equal((await request('/api/data', cookie, 'POST', { ...record, comercial_cotizaciones: 99 })).status, 400);
+      assert.equal((await request('/api/data', cookie, 'POST', { ...record, comercial_seguimientos: -1 })).status, 400);
+      assert.equal((await request('/api/data', cookie, 'POST', [{ ...record, comercial_leads: 50 }, { ...record, empresa: company === 'EHS' ? 'GESTIONRH' : 'EHS' }])).status, 403);
+      assert.deepEqual((await (await request('/api/data', cookie)).json()).find(r => r.periodo === record.periodo), record);
+      assert.equal((await request('/api/data', cookie, 'POST', { ...record, comercial_productos_cotizados: [], comercial_cotizaciones_detalle: [] })).status, 200);
+      assert.deepEqual((await (await request('/api/data', cookie)).json()).find(r => r.periodo === record.periodo).comercial_productos_cotizados, []);
+    }
+  });
+
 });

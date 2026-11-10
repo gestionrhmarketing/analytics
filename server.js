@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const salesActivity = require('./public/sales-activity-model');
 
 // Initialize Firebase Admin (Safe for deployment)
 let serviceAccount;
@@ -129,7 +130,7 @@ const AUTH_USERS = [
 // Use the same SESSION_SECRET on all production instances. Local sessions expire on restart without it.
 const SESSION_KEY = process.env.SESSION_SECRET || crypto.randomBytes(32);
 const SESSION_MAX_AGE = 12 * 60 * 60 * 1000;
-const SALES_FIELDS = ['empresa', 'periodo', 'comercial_facturacion', 'comercial_cierres', 'comercial_ticket', 'comercial_leads'];
+const SALES_FIELDS = ['empresa', 'periodo', 'comercial_facturacion', 'comercial_cierres', 'comercial_ticket', ...salesActivity.FIELDS];
 
 function publicUser(user) {
   const { username, name, role, allowedModules, company } = user;
@@ -267,6 +268,11 @@ app.post('/api/data', async (req, res) => {
       Object.keys(record).some(key => !SALES_FIELDS.includes(key))
     )) {
       return res.status(403).json({ success: false, message: 'Solo puedes modificar Ventas de tu empresa' });
+    }
+
+    for (const record of records) {
+      const error = salesActivity.validate(record);
+      if (error) return res.status(400).json({ success: false, message: error });
     }
 
     // 1. Guardar en Firebase Firestore con merge: true (preserva todos los demás campos)

@@ -701,6 +701,34 @@
       </div>
     </div>
 
+    <section class="sales-activity-panel" aria-labelledby="salesActivityTitle">
+      <div class="sales-activity-heading">
+        <div>
+          <h2 id="salesActivityTitle">Actividad comercial</h2>
+          <p id="salesActivityScope"></p>
+        </div>
+        <div class="sales-activity-controls">
+          <label for="salesActivityMonth">Ver indicadores de</label>
+          <select id="salesActivityMonth" class="form-input">
+            <option value="">Todo el año</option>
+            <option value="01">Enero</option><option value="02">Febrero</option>
+            <option value="03">Marzo</option><option value="04">Abril</option>
+            <option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option>
+            <option value="09">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+          <button type="button" id="btnOpenSalesActivity" class="btn btn-primary">Registrar actividad comercial</button>
+        </div>
+      </div>
+      <div id="salesActivityMetrics" class="sales-activity-metrics"></div>
+      <div class="sales-activity-rankings">
+        <article><h3>Origen de las cotizaciones</h3><div id="salesActivityOrigins"></div></article>
+        <article><h3>Top 5 productos cotizados</h3><ol id="salesActivityProducts"></ol></article>
+        <article><h3>Top 3 cotizaciones más grandes</h3><ol id="salesActivityQuotes"></ol></article>
+      </div>
+    </section>
+
     <!-- MAIN TWO-COLUMN DASHBOARD GRID (Left: 62%, Right: 38%) -->
     <!-- 4 Key Sales KPI Cards (Top 4-Column Row) -->
     <div class="ventas-kpi-grid">
@@ -1627,6 +1655,41 @@
   </div>
 </div>
 
+<!-- ===== MONTHLY SALES ACTIVITY FORM ===== -->
+<div class="modal-overlay" id="modalSalesActivity">
+  <div class="modal modal-large sales-activity-modal" role="dialog" aria-modal="true" aria-labelledby="salesActivityFormTitle">
+    <button type="button" class="modal-close" id="closeSalesActivity" aria-label="Cerrar formulario">&times;</button>
+    <h2 id="salesActivityFormTitle" class="modal-title">Actividad comercial</h2>
+    <p class="modal-subtitle" id="salesActivityFormCompany"></p>
+    <form id="salesActivityForm">
+      <div class="form-group">
+        <label for="salesActivityPeriod">Mes del reporte</label>
+        <input type="month" id="salesActivityPeriod" class="form-input" min="2022-01" max="2027-12" required />
+        <p class="sales-help">Selecciona un mes para consultar o editar su información. Los datos se guardan por empresa y mes.</p>
+      </div>
+      <div id="salesActivityFields" class="form-grid"></div>
+      <p id="salesActivityPercentages" class="sales-help" aria-live="polite"></p>
+      <fieldset class="sales-activity-fieldset">
+        <legend>Productos cotizados</legend>
+        <p class="sales-help">Registra el producto y cuántas veces se cotizó en el mes. El dashboard mostrará los 5 más cotizados.</p>
+        <div id="salesActivityProductRows"></div>
+        <button type="button" id="addSalesProduct" class="btn btn-secondary">Agregar producto</button>
+      </fieldset>
+      <fieldset class="sales-activity-fieldset">
+        <legend>Cotizaciones por monto</legend>
+        <p class="sales-help">Registra el folio o cliente y el monto en MXN. El dashboard mostrará las 3 cotizaciones más grandes.</p>
+        <div id="salesActivityQuoteRows"></div>
+        <button type="button" id="addSalesQuote" class="btn btn-secondary">Agregar cotización</button>
+      </fieldset>
+      <p id="salesActivityFormError" class="sales-form-error" role="alert"></p>
+      <div class="sales-form-actions">
+        <button type="button" id="cancelSalesActivity" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" id="saveSalesActivity" class="btn btn-primary">Guardar actividad comercial</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ===== MODAL: CAPTURAR / EDITAR VENTAS COMERCIALES ===== -->
 <div class="modal-overlay" id="modalVentas">
   <div class="modal modal-large" style="max-width: 840px; max-height: 90vh; overflow-y: auto;">
@@ -2072,6 +2135,8 @@
 <!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
+<script src="sales-activity-model.js"></script>
+<script src="sales-activity.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

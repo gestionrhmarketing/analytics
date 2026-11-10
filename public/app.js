@@ -1150,6 +1150,8 @@ function renderVentasDashboard(company, year) {
     recordSubEl.textContent = `Mayor facturación registrada`;
   }
 
+  renderSalesActivityDashboard();
+
   // Customer Habits Chart
   renderVentasCustomerHabitsChart(ventasActiveCompany);
 
@@ -3252,6 +3254,7 @@ function renderCompareUI() {
 
 // ===== BIND EVENTS =====
 function bindEvents() {
+  bindSalesActivityEvents();
   // Marketing Company tabs
   document.querySelectorAll('#companyTabs .company-tab').forEach(btn => {
     btn.addEventListener('click', () => {

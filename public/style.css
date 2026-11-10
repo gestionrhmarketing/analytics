@@ -781,3 +781,33 @@ body { font-family: var(--font); background: var(--bg); color: var(--text-primar
   cursor: pointer;
 }
 
+
+/* Monthly commercial activity, scoped to the active sales company. */
+.sales-activity-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 22px; padding: 24px; }
+.sales-activity-heading, .sales-activity-controls { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.sales-activity-heading h2 { margin: 0; font-size: 1.2rem; color: #0f172a; }
+.sales-activity-heading p, .sales-help { color: #64748b; font-size: .82rem; margin: 8px 0 16px; }
+.sales-activity-controls label { font-size: .8rem; color: #475569; }
+.sales-activity-controls select { width: auto; }
+.sales-activity-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0; }
+.sales-activity-metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; }
+.sales-activity-metric span { display: block; font-size: .8rem; color: #475569; min-height: 36px; }
+.sales-activity-metric strong { display: block; color: #0a3d24; font-size: 1.8rem; margin-top: 8px; }
+.sales-activity-rankings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.sales-activity-rankings article { border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; min-width: 0; }
+.sales-activity-rankings h3 { margin: 0 0 14px; color: #0f172a; font-size: .95rem; }
+.sales-activity-rankings ol { margin: 0; padding-left: 22px; }
+.sales-activity-rankings li { font-size: .85rem; color: #334155; padding: 7px 0; overflow-wrap: anywhere; }
+.sales-origin-row { display: flex; justify-content: space-between; gap: 8px; padding: 9px 0; font-size: .85rem; }
+.sales-origin-track { height: 8px; border-radius: 8px; background: #e2e8f0; overflow: hidden; margin-bottom: 10px; }
+.sales-origin-track span { display: block; height: 100%; background: #16935d; }
+.sales-activity-modal { max-width: 880px; max-height: 90vh; overflow-y: auto; }
+.sales-activity-modal label { display: block; margin-bottom: 7px; font-size: .85rem; font-weight: 600; color: #334155; }
+.sales-activity-fieldset { margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; }
+.sales-activity-fieldset legend { font-weight: 700; color: #0f172a; padding: 0 6px; }
+.sales-detail-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(100px, .55fr) auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+.sales-detail-row button { margin-bottom: 1px; padding: 10px; }
+.sales-form-error { color: #b91c1c; font-size: .85rem; }
+.sales-form-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+@media (max-width: 900px) { .sales-activity-rankings { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .sales-activity-panel { padding: 16px; } .sales-detail-row { grid-template-columns: 1fr; } .sales-activity-controls { align-items: stretch; width: 100%; } }
