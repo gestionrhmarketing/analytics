@@ -1,0 +1,166 @@
+/* Presentation layer. Existing grids, ordering, spacing and dimensions are retained.
+   Important declarations override the application's existing inline color styles. */
+body.ui-theme {
+  --accent: #d3f56b;
+  --accent-hover: #c5e85a;
+  --ink: #191c17;
+  --muted: #697064;
+  --canvas: #f2f3ef;
+  --line: #e3e6de;
+  --primary-green: #191c17;
+  --secondary-blue: #596745;
+  --blue: #191c17;
+  --blue-dark: #31382b;
+  --blue-light: #f3f5ef;
+  --green: #496d20;
+  --purple: #596745;
+  --orange: #716445;
+  --teal: #53684e;
+  --red: #b44339;
+  --bg: #f2f3ef;
+  --border: #e3e6de;
+  --text-primary: #191c17;
+  --text-secondary: #697064;
+  --text-muted: #697064;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 24px 80px #151d161f;
+  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+.ui-theme button, .ui-theme input, .ui-theme select, .ui-theme textarea { font-family: var(--font); }
+.ui-theme :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #5c762e; outline-offset: 3px; }
+.ui-theme :is(button, input, select, textarea) { accent-color: #5c762e; }
+.ui-theme ::selection { background: var(--accent); color: var(--ink); }
+.ui-theme .app-layout { background: var(--canvas); }
+
+/* Dark navigation, a single lime active state and quiet supporting text. */
+.ui-theme .app-sidebar { background: #191c17; box-shadow: none; border-radius: 22px; }
+.ui-theme .sidebar-brand-icon { background: var(--accent); color: var(--ink); box-shadow: none; }
+.ui-theme .sidebar-brand-name { color: #f8faf4; letter-spacing: -.025em; }
+.ui-theme .sidebar-brand-desc, .ui-theme .sidebar-menu-header { color: #a9b19f; }
+.ui-theme .sidebar-nav-item { color: #c7cdbf; font-weight: 500; }
+.ui-theme .sidebar-nav-item.active { background: var(--accent); color: var(--ink); box-shadow: none; }
+.ui-theme .sidebar-nav-item.active svg { stroke: var(--ink); }
+.ui-theme .sidebar-nav-item:not(.active):hover { background: #30362b; color: #fff; }
+.ui-theme .sidebar-footer-card { background: #262c21; border-color: #3a4232; box-shadow: none; border-radius: 14px; }
+.ui-theme .sidebar-footer-tag { color: var(--accent); }
+.ui-theme .sidebar-footer-desc { color: #b5bdac; }
+.ui-theme #sidebarBtnLogout { background: transparent !important; border-color: #68735c !important; color: #e0e7d7 !important; }
+
+/* Neutral shells; no changes to the structure or placement of their contents. */
+.ui-theme :where(.navbar, .subbar, .card, .ui-surface, .sales-activity-panel, .sales-activity-rankings article) {
+  background: #fff !important;
+  background-image: none !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+.ui-theme :is(.navbar, .subbar, .card, .ui-surface, .sales-activity-panel) { border-radius: 18px !important; }
+.ui-theme .card .card { border-radius: 12px !important; }
+.ui-theme .card:hover { box-shadow: none; }
+.ui-theme .app-main-wrapper [style*="color"], .ui-theme .modal [style*="color"] { color: var(--ink) !important; }
+.ui-theme :is(h1, h2, h3, h4) { color: var(--ink) !important; letter-spacing: -.025em !important; }
+.ui-theme .card-title { color: #525b49 !important; letter-spacing: .075em !important; font-weight: 650; }
+.ui-theme :is(.metric-label, .big-label, .sales-help, .modal-subtitle) { color: var(--muted) !important; }
+.ui-theme :is(.metric-value, .big-number, .value, .sales-activity-metric strong) {
+  color: var(--ink) !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.035em;
+}
+.ui-theme :is(.card-icon, .ui-icon) { background: #f0f2eb !important; color: var(--ink) !important; box-shadow: none !important; }
+.ui-theme :is(.ui-badge, .page-chip, .ventas-chart-stat-chip, .ventas-preset-btn) {
+  background: #f1f3ed !important; color: #48523e !important; border-color: var(--line) !important; box-shadow: none !important;
+}
+.ui-theme .page-chip { color: var(--ink) !important; }
+.ui-theme .ui-data-bar { background: #edf0e7 !important; color: var(--ink) !important; box-shadow: none !important; }
+
+/* Secondary KPI tiles stay white. Only the total for each section is accented. */
+.ui-theme :is(.metric, .metric.highlight, .metric.total-gasto, .sales-activity-metric) {
+  background: #fff !important; color: var(--ink); border-color: var(--line) !important; border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ui-theme :is(.metric.highlight-metric, .metric:has(#gasto_inversion_total), .metric:has(#ventas_totales), .metric:has(#retargeting_apertura)) {
+  background: var(--accent) !important; border-color: var(--accent) !important; box-shadow: none;
+}
+.ui-theme .metric.highlight-metric { border-radius: 12px !important; }
+.ui-theme .metric.highlight-metric :is(.metric-label, .metric-value, .sub-metrics, strong) { color: #233014 !important; }
+.ui-theme .company-banner { background: #191c17 !important; box-shadow: none !important; border-radius: 18px; }
+.ui-theme .company-banner h1 { color: #fff !important; }
+.ui-theme .banner-logo-wrap { background: #fff; border-color: #fff; backdrop-filter: none; }
+
+/* The same hierarchy applies in Sales and Social: one lead KPI, neutral peers. */
+.ui-theme .ventas-kpi-grid > div { background: #fff !important; border-color: var(--line) !important; box-shadow: none !important; border-radius: 18px !important; }
+.ui-theme .ventas-kpi-grid > div:first-child { background: var(--accent) !important; border-color: var(--accent) !important; }
+.ui-theme .ventas-kpi-grid > div :is(div, span, strong) { color: var(--ink) !important; }
+.ui-theme .ventas-kpi-grid > div > div:first-child > div { background: #f2f4ec !important; box-shadow: none !important; }
+.ui-theme .ventas-kpi-grid > div:first-child > div:first-child > div { background: #191c17 !important; color: var(--accent) !important; }
+.ui-theme .ventas-kpi-grid > div:first-child > div:first-child > div svg { stroke: var(--accent); }
+.ui-theme .ventas-pill-badge.green, .ui-theme .ventas-pill-badge.mint { background: #eef4e3 !important; color: #3a581e !important; }
+.ui-theme .ventas-pill-badge.red { background: #f7ece9 !important; color: #9c3a30 !important; }
+.ui-theme .ventas-kpi-grid > div:first-child .ventas-pill-badge { background: #191c17 !important; color: var(--accent) !important; }
+.ui-theme .sales-activity-metric:first-child { background: var(--accent) !important; box-shadow: none; }
+.ui-theme .sales-activity-metric span { color: #606a56; }
+.ui-theme .sales-activity-metric:first-child span { color: #354025; }
+.ui-theme .sales-activity-rankings article { border-radius: 12px; }
+.ui-theme :is(.sales-origin-track, #v_historical_bars_list [style*="height: 5px"]) { background: #eef0e9 !important; }
+.ui-theme .sales-origin-track span { background: #758943; }
+.ui-theme #v_historical_bars_list > div { background: #fff !important; border-color: var(--line) !important; }
+.ui-theme #v_historical_bars_list [style*="linear-gradient"] { background: #687a45 !important; }
+.ui-theme #ventasChartLegend > :is(div, span) { color: var(--ink) !important; }
+.ui-theme [id^="rf_bar_"] { background: #74874c !important; }
+
+/* Controls use black for actions and restrained borders for everything else. */
+.ui-theme :is(button, .btn-primary, .btn-secondary) { box-shadow: none !important; }
+.ui-theme :is(.btn-primary, .btn-register, .btn-reporte, #btnOpenVentasModal, #btnOpenRedesModal, #btnSaveVentasAnual, #btnSaveRedesDiario) {
+  background: #191c17 !important; color: #fff !important; border-color: #191c17 !important; border-radius: 10px !important;
+}
+.ui-theme :is(.btn-primary, .btn-register):hover { background: #343d2b !important; transform: none; }
+.ui-theme :is(.btn-secondary, .btn-login, .btn-compare, .btn-pdf, .btn-irmp, .btn-growth, .btn-activities, .period-nav) {
+  background: #fff !important; color: var(--ink) !important; border-color: #dce1d5 !important; border-radius: 10px !important;
+}
+.ui-theme :is(.btn-irmp, .btn-growth, .btn-activities) { box-shadow: inset 0 0 0 1px #dce1d5 !important; }
+.ui-theme :is(.btn-secondary, .btn-login, .btn-compare, .btn-pdf, .btn-irmp, .btn-growth, .btn-activities, .period-nav):hover { background: #f0f3e9 !important; }
+.ui-theme :is(.company-tabs, .form-tabs) { background: #f1f3ed; }
+.ui-theme :is(.company-tab, .social-tab, .sf-tab, .form-tab, .ventas-tab-btn, .redes-net-tab) { box-shadow: none !important; }
+.ui-theme :is(.company-tab.active, .social-tab.active, .sf-tab.active, .form-tab.active, .ventas-tab-btn.active, .redes-net-tab.active) {
+  background: #191c17 !important; color: #fff !important; border-color: #191c17 !important;
+}
+.ui-theme :is(.company-tab.active, .redes-net-tab.active) :is(i, span) { color: #fff !important; }
+.ui-theme .redes-net-tab:not(.active) { background: #fff !important; color: #59634f !important; border-color: var(--line) !important; }
+.ui-theme :is(.form-input, .form-select, input, select, textarea) { border-color: #dce1d5 !important; color: var(--ink) !important; }
+.ui-theme :is(.form-input, .form-select, input, textarea) { background: #fff !important; border-radius: 9px; box-shadow: none; }
+.ui-theme :is(input, textarea)::placeholder { color: #828a79; }
+.ui-theme :is(input, textarea, select):focus { border-color: #6c8345 !important; }
+.ui-theme .modal { border-radius: 20px; background: #fff; }
+.ui-theme .modal-overlay { background: #171d1466; backdrop-filter: blur(5px); }
+.ui-theme .modal-icon { background: #f1f3ed !important; color: var(--ink) !important; }
+.ui-theme .modal :is(th, tfoot, tr[style*="background"]) { background: #f4f6f0 !important; color: #505b44 !important; }
+.ui-theme .modal :is(td, th, fieldset) { border-color: var(--line) !important; }
+.ui-theme .sales-form-error, .ui-theme [role="alert"] { color: #a4382f !important; }
+.ui-theme .toast { background: #191c17 !important; color: #fff; box-shadow: 0 8px 24px #191c171a; }
+.ui-theme .status-dot { box-shadow: none; }
+.ui-theme .status-dot.saved { background: #6c8345; }
+
+/* Login keeps its original form and placement, with a flat, readable surface. */
+.ui-theme #loginOverlay { background: #e9ede3 !important; font-family: var(--font) !important; }
+.ui-theme #loginOverlay > div { background: #fff !important; border-color: #dce1d5 !important; border-radius: 22px !important; box-shadow: 0 24px 70px #20291a12 !important; backdrop-filter: none !important; color: var(--ink) !important; }
+.ui-theme #loginOverlay :is(label, p) { color: #647058 !important; }
+.ui-theme #loginOverlay img { filter: none !important; }
+.ui-theme #loginOverlay button[type="submit"] { background: #191c17 !important; color: var(--accent) !important; border-radius: 10px !important; }
+.ui-theme #loginOverlay input { background: #f6f8f2 !important; color: var(--ink) !important; }
+.ui-theme #loginError { color: #a4382f !important; }
+@media (prefers-reduced-motion: reduce) {
+  .ui-theme *, .ui-theme *::before, .ui-theme *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* Supporting text and secondary controls retain a neutral tone. */
+.ui-theme :is(.sales-activity-heading p, .sales-activity-rankings li, .sales-activity-controls label, .modal label) { color: #58634e; }
+.ui-theme .sales-activity-metric { box-shadow: none; }
+.ui-theme :is(#redesVisualFunnelBars > div:first-child, #redesVisualFunnelBars > div:last-child) { background: #e1e8d5 !important; }
+.ui-theme :is(#btnSaveActivity, #btnSaveRegister) { background: #191c17 !important; color: #fff !important; }
+
+.ui-theme .sales-activity-panel .sales-activity-metric { box-shadow: none; }
+.ui-theme .ventas-kpi-grid > div:first-child .ui-icon { background: #191c17 !important; color: var(--accent) !important; }
+.ui-theme .ventas-kpi-grid > div:first-child .ui-icon svg { stroke: var(--accent); }

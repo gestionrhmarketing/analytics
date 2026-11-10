@@ -12,12 +12,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
-<body>
+<body class="ui-theme">
 
 <!-- ===== LOGIN OVERLAY ===== -->
-<div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #0b1a30 0%, #092c1a 100%); z-index: 99999; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif;">
-  <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; color: #f8fafc; margin: 20px;">
+<div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #0b1a30 0%, #092c1a 100%); z-index: 99999; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif;" class="ui-data-bar">
+  <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; color: #f8fafc; margin: 20px;" class="ui-surface">
     
     <div style="margin-bottom: 2rem;">
       <img src="/dass_logo.png" alt="Grupo Dass" style="max-width: 220px; height: auto; margin-bottom: 1rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));" />
@@ -641,7 +642,7 @@
         <div class="card-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         <h2 class="card-title">TENDENCIA MENSUAL</h2>
       </div>
-      <span id="chartTendenciaYearBadge" style="font-size: 0.75rem; font-weight: 700; color: #1a73e8; background: #e8f0fe; padding: 4px 12px; border-radius: 12px;">Año 2026</span>
+      <span id="chartTendenciaYearBadge" style="font-size: 0.75rem; font-weight: 700; color: #1a73e8; background: #e8f0fe; padding: 4px 12px; border-radius: 12px;" class="ui-badge">Año 2026</span>
     </div>
     <div class="chart-wrap tall-chart">
       <canvas id="chartTendencia"></canvas>
@@ -654,7 +655,7 @@
   <!-- ===== VENTAS VIEW (EHS / GRH) — MATCHING REFERENCE DESIGN ===== -->
   <div id="ventasView" style="display: none; flex-direction: column; gap: 20px;">
     <!-- Ventas Header Bar -->
-    <div style="background: #FFFFFF; border-radius: 20px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;">
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;" class="ui-surface">
       <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
         <div>
           <h1 id="ventasTitle" style="font-size: 1.45rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Sales Report</h1>
@@ -683,7 +684,7 @@
         </button>
 
         <!-- Annual Period Navigation (2022 to 2027) -->
-        <div style="display: flex; align-items: center; gap: 4px; background: #f8fafc; padding: 4px 6px; border-radius: 16px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 4px; background: #f8fafc; padding: 4px 6px; border-radius: 16px; border: 1px solid #e2e8f0;" class="ui-surface">
           <button class="period-nav" id="ventasPrevPeriod" title="Año Anterior" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight: bold;">&#8592;</button>
           <div style="display: flex; align-items: center; gap: 4px; padding: 0 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -734,13 +735,13 @@
     <div class="ventas-kpi-grid">
       
       <!-- Card 1: Facturación Anual (DARK FOREST GREEN CARD) -->
-      <div style="background: #0a3d24; border-radius: 22px; padding: 22px; box-shadow: 0 8px 24px rgba(10,61,36,0.18); display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; position: relative; overflow: hidden;">
+      <div style="background: #0a3d24; border-radius: 22px; padding: 22px; box-shadow: 0 8px 24px rgba(10,61,36,0.18); display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; position: relative; overflow: hidden;" class="ui-surface">
         <div style="position: absolute; right: -15px; bottom: -15px; opacity: 0.08; color: #ffffff; pointer-events: none;">
           <svg width="130" height="130" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffffff; color: #0a3d24; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffffff; color: #0a3d24; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" class="ui-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           </div>
           <span id="v_ventas_badge" class="ventas-pill-badge green">+0.0%</span>
@@ -754,9 +755,9 @@
       </div>
 
       <!-- Card 2: Promedio Mensual del Año (White Card) -->
-      <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;" class="ui-surface">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center;" class="ui-surface ui-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           </div>
           <span id="v_promedio_badge" class="ventas-pill-badge green">+0.0%</span>
@@ -770,9 +771,9 @@
       </div>
 
       <!-- Card 3: Mes con Menor Facturación (White Card - Piso Anual) -->
-      <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;" class="ui-surface">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center;" class="ui-surface ui-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
           </div>
           <span id="v_mes_min_badge" class="ventas-pill-badge red">Piso Anual</span>
@@ -786,9 +787,9 @@
       </div>
 
       <!-- Card 4: Mes Récord del Año (White Card) -->
-      <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+      <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;" class="ui-surface">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: #f1f5f9; color: #16935d; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #f1f5f9; color: #16935d; display: flex; align-items: center; justify-content: center;" class="ui-surface ui-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </div>
           <span id="v_mes_record_badge" class="ventas-pill-badge green">Pico Anual</span>
@@ -810,7 +811,7 @@
       <div style="display: flex; flex-direction: column; height: 100%;">
         
         <!-- Centro de Gráficas y Análisis de Facturación (Customer Habits Design) -->
-        <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 16px; height: 100%; box-sizing: border-box;">
+        <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 16px; height: 100%; box-sizing: border-box;" class="ui-surface">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
             <div>
               <h2 id="ventasChartTitle" style="font-size: 1.15rem; font-weight: 800; color: #111827; margin: 0;">Análisis de Facturación</h2>
@@ -836,10 +837,10 @@
                 </button>
 
                 <!-- Floating Popover Menu -->
-                <div id="ventasYearComparePopover" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.12); padding: 14px 16px; width: 270px; z-index: 100;">
+                <div id="ventasYearComparePopover" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.12); padding: 14px 16px; width: 270px; z-index: 100;" class="ui-surface">
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                     <span style="font-size: 0.8rem; font-weight: 800; color: #0f172a;">Años a Comparar</span>
-                    <span id="ventasYearCountBadge" style="font-size: 0.7rem; background: rgba(22,147,93,0.12); color: #16935d; padding: 2px 8px; border-radius: 10px; font-weight: 700;">3 seleccionados</span>
+                    <span id="ventasYearCountBadge" style="font-size: 0.7rem; background: rgba(22,147,93,0.12); color: #16935d; padding: 2px 8px; border-radius: 10px; font-weight: 700;" class="ui-badge">3 seleccionados</span>
                   </div>
                   <p style="font-size: 0.72rem; color: #64748b; margin: 0 0 10px;">Elige los años que desees visualizar o comparar:</p>
 
@@ -880,13 +881,13 @@
       <div style="display: flex; flex-direction: column; height: 100%;">
         
         <!-- CARD: Facturación por Mes (Mes y Monto) -->
-        <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 14px; height: 100%; box-sizing: border-box;">
+        <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 14px; height: 100%; box-sizing: border-box;" class="ui-surface">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
             <div>
               <h2 id="v_growth_card_title" style="font-size: 1.15rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Facturación por Mes</h2>
               <p id="v_growth_card_sub" style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0;">Desglose mensual de monto facturado</p>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 12px; border-radius: 14px; font-size: 0.75rem; font-weight: 700; color: #16935d; display: flex; align-items: center; gap: 5px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 12px; border-radius: 14px; font-size: 0.75rem; font-weight: 700; color: #16935d; display: flex; align-items: center; gap: 5px;" class="ui-surface">
               <span id="v_growth_card_badge">Año 2026</span>
             </div>
           </div>
@@ -905,12 +906,12 @@
   <!-- ===== REDES SOCIALES VIEW (ESTADÍSTICAS DIARIAS EN EMBUDO) ===== -->
   <div id="redesView" style="display: none; flex-direction: column; gap: 20px;">
     <!-- Redes Header Bar -->
-    <div style="background: #FFFFFF; border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;">
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 16px;" class="ui-surface">
       <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <h1 id="redesTitle" style="font-size: 1.45rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em;">Redes Sociales · Estadísticas Semanales</h1>
-            <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;">Embudo Semanal</span>
+            <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;" class="ui-badge">Embudo Semanal</span>
           </div>
           <p id="redesDateSubtitle" style="font-size: 0.8rem; color: #6b7280; margin: 4px 0 0; font-weight: 500;">EHS INTEGRAL · Control Semanal de Visibilidad, Interacción, Video y Comunidad</p>
         </div>
@@ -931,7 +932,7 @@
       <!-- Right controls: Navegación Semanal & Botón de Captura -->
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <!-- Weekly Navigation -->
-        <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 5px 10px; border-radius: 14px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 5px 10px; border-radius: 14px; border: 1px solid #e2e8f0;" class="ui-surface">
           <button class="period-nav" id="redesPrevPeriod" title="Semana Anterior" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #fff; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight: bold;">&#8592;</button>
           <div style="display: flex; align-items: center; gap: 6px; padding: 0 4px; position: relative;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -951,7 +952,7 @@
     </div>
 
     <!-- Selector de Red Social (Todas + 5 Plataformas) -->
-    <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px;">
+    <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px;" class="ui-surface">
       <div id="redesPlatformTabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <button type="button" class="redes-net-tab active" data-rnet="all" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; border: 1px solid #4f46e5; background: #4f46e5; color: #ffffff; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">
           <i class="fas fa-layer-group"></i>
@@ -980,7 +981,7 @@
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span id="redesPeriodInfoBadge" style="background: #f1f5f9; color: #334155; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+        <span id="redesPeriodInfoBadge" style="background: #f1f5f9; color: #334155; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; border: 1px solid #e2e8f0;" class="ui-badge">
           📅 Viendo: Hoy
         </span>
       </div>
@@ -990,7 +991,7 @@
     <div style="display: flex; flex-direction: column; gap: 14px;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 0 4px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 12px rgba(79,70,229,0.25);">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 12px rgba(79,70,229,0.25);" class="ui-surface ui-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           </div>
           <div>
@@ -998,7 +999,7 @@
             <p id="rf_weekly_subtitle" style="font-size: 0.78rem; color: #64748b; margin: 2px 0 0; font-weight: 500;">Comparación automática de los 7 días de la semana actual contra los 7 días de la semana previa</p>
           </div>
         </div>
-        <span id="rf_weekly_badge" style="background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 14px; border: 1px solid #c7d2fe;">
+        <span id="rf_weekly_badge" style="background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 14px; border: 1px solid #c7d2fe;" class="ui-badge">
           Semana actual vs Semana anterior
         </span>
       </div>
@@ -1007,13 +1008,13 @@
       <div class="ventas-kpi-grid">
         
         <!-- Card 1: Alcance Semanal (DARK INDIGO HERO CARD) -->
-        <div style="background: #1e1b4b; border-radius: 22px; padding: 22px; box-shadow: 0 8px 24px rgba(30,27,75,0.18); display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; position: relative; overflow: hidden;">
+        <div style="background: #1e1b4b; border-radius: 22px; padding: 22px; box-shadow: 0 8px 24px rgba(30,27,75,0.18); display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; position: relative; overflow: hidden;" class="ui-surface">
           <div style="position: absolute; right: -15px; bottom: -15px; opacity: 0.08; color: #ffffff; pointer-events: none;">
             <svg width="130" height="130" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffffff; color: #1e1b4b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffffff; color: #1e1b4b; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" class="ui-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </div>
             <span id="w_alcance_delta" class="ventas-pill-badge green">+0.0%</span>
@@ -1027,9 +1028,9 @@
         </div>
 
         <!-- Card 2: Interacciones Semanales (White Card) -->
-        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;" class="ui-surface">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center;" class="ui-surface ui-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </div>
             <span id="w_interacciones_delta" class="ventas-pill-badge green">+0.0%</span>
@@ -1043,9 +1044,9 @@
         </div>
 
         <!-- Card 3: Crecimiento Neto de Seguidores (White Card) -->
-        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;" class="ui-surface">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;" class="ui-surface ui-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
             </div>
             <span id="w_seguidores_delta" class="ventas-pill-badge green">+0.0%</span>
@@ -1059,9 +1060,9 @@
         </div>
 
         <!-- Card 4: % Tasa de Engagement (White Card) -->
-        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;">
+        <div style="background: #FFFFFF; border-radius: 22px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; min-height: 155px;" class="ui-surface">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center;" class="ui-surface ui-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
             <span id="w_engagement_delta" class="ventas-pill-badge green">+0.0 p.p.</span>
@@ -1078,16 +1079,16 @@
     </div>
 
     <!-- ===== SECCIÓN PRINCIPAL: EMBUDO DE CONVERSIÓN (ATRACCIÓN -> INTERACCIÓN) ===== -->
-    <div style="background: #FFFFFF; border-radius: 24px; padding: 26px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;">
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 26px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;" class="ui-surface">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
         <div>
           <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #4f46e5, #ec4899); color: #fff; align-items: center; justify-content: center; font-size: 14px;">▽</span>
+            <span style="display: inline-flex; width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #4f46e5, #ec4899); color: #fff; align-items: center; justify-content: center; font-size: 14px;" class="ui-badge">▽</span>
             Embudo de Rendimiento en Redes Sociales
           </h2>
           <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0;">Flujo desde el impacto visual y alcance hasta la acción e interacción del usuario</p>
         </div>
-        <div id="redesFunnelPlatformBadge" style="background: #eef2ff; color: #4f46e5; font-weight: 800; font-size: 0.78rem; padding: 6px 14px; border-radius: 20px;">
+        <div id="redesFunnelPlatformBadge" style="background: #eef2ff; color: #4f46e5; font-weight: 800; font-size: 0.78rem; padding: 6px 14px; border-radius: 20px;" class="ui-surface">
           Todas las Redes (Consolidado)
         </div>
       </div>
@@ -1099,10 +1100,10 @@
         <div style="display: flex; flex-direction: column; align-items: center;">
           
           <!-- NIVEL 1: ATRACCIÓN / VISIBILIDAD (100% ANCHO) -->
-          <div style="width: 100%; background: linear-gradient(180deg, #f5f7ff 0%, #eef2ff 100%); border: 2px solid #c7d2fe; border-radius: 20px; padding: 20px; box-sizing: border-box; position: relative;">
+          <div style="width: 100%; background: linear-gradient(180deg, #f5f7ff 0%, #eef2ff 100%); border: 2px solid #c7d2fe; border-radius: 20px; padding: 20px; box-sizing: border-box; position: relative;" class="ui-surface ui-data-bar">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid #dbeafe; padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="background: #4f46e5; color: #fff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em;">ETAPA 1</span>
+                <span style="background: #4f46e5; color: #fff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em;" class="ui-badge">ETAPA 1</span>
                 <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e1b4b; letter-spacing: -0.01em;">ATRACCIÓN / VISIBILIDAD</h3>
               </div>
               <span style="font-size: 0.75rem; color: #4338ca; font-weight: 600;">Exposición y descubrimiento de marca</span>
@@ -1111,7 +1112,7 @@
             <!-- 5 Métricas de Atracción / Visibilidad -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px;">
               <!-- Impresiones -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Impresiones</span>
                   <i class="fas fa-eye" style="color: #6366f1;"></i>
@@ -1121,7 +1122,7 @@
               </div>
 
               <!-- Alcance -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Alcance</span>
                   <i class="fas fa-broadcast-tower" style="color: #4f46e5;"></i>
@@ -1131,7 +1132,7 @@
               </div>
 
               <!-- Visualizaciones / reproducciones -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Visualizaciones</span>
                   <i class="fas fa-play-circle" style="color: #3b82f6;"></i>
@@ -1141,7 +1142,7 @@
               </div>
 
               <!-- Espectadores únicos -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Espectadores Únicos</span>
                   <i class="fas fa-user-check" style="color: #0ea5e9;"></i>
@@ -1151,7 +1152,7 @@
               </div>
 
               <!-- Visitas al perfil -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);">
+              <div style="background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(79,70,229,0.04);" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Visitas al Perfil</span>
                   <i class="fas fa-id-badge" style="color: #8b5cf6;"></i>
@@ -1163,17 +1164,17 @@
           </div>
 
           <!-- CONECTOR CUELLO DEL EMBUDO -->
-          <div style="width: 82%; height: 38px; background: linear-gradient(180deg, rgba(199,210,254,0.5) 0%, rgba(254,205,211,0.6) 100%); clip-path: polygon(0 0, 100% 0, 93% 100%, 7% 100%); display: flex; align-items: center; justify-content: center;">
-            <span id="rf_connector_badge" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 14px; font-size: 0.73rem; font-weight: 800; color: #be123c; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+          <div style="width: 82%; height: 38px; background: linear-gradient(180deg, rgba(199,210,254,0.5) 0%, rgba(254,205,211,0.6) 100%); clip-path: polygon(0 0, 100% 0, 93% 100%, 7% 100%); display: flex; align-items: center; justify-content: center;" class="ui-data-bar">
+            <span id="rf_connector_badge" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 14px; font-size: 0.73rem; font-weight: 800; color: #be123c; box-shadow: 0 2px 6px rgba(0,0,0,0.06);" class="ui-badge">
               ↓ Conversión a Interacción: 0.00%
             </span>
           </div>
 
           <!-- NIVEL 2: INTERACCIÓN (88% ANCHO CENTRADO PARA FORMA DE EMBUDO) -->
-          <div style="width: 90%; background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fecdd3; border-radius: 20px; padding: 20px; box-sizing: border-box;">
+          <div style="width: 90%; background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fecdd3; border-radius: 20px; padding: 20px; box-sizing: border-box;" class="ui-surface ui-data-bar">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid #fecdd3; padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="background: #e11d48; color: #fff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em;">ETAPA 2</span>
+                <span style="background: #e11d48; color: #fff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.04em;" class="ui-badge">ETAPA 2</span>
                 <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #881337; letter-spacing: -0.01em;">INTERACCIÓN</h3>
               </div>
               <span style="font-size: 0.75rem; color: #be123c; font-weight: 600;">Respuesta activa y compromiso (Engagement)</span>
@@ -1182,7 +1183,7 @@
             <!-- 5 Métricas operativas de Interacción -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px;">
               <!-- Me gusta / reacciones -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Me gusta / Reacc.</span>
                   <i class="fas fa-heart" style="color: #e11d48;"></i>
@@ -1191,7 +1192,7 @@
               </div>
 
               <!-- Comentarios -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Comentarios</span>
                   <i class="fas fa-comment-dots" style="color: #f97316;"></i>
@@ -1200,7 +1201,7 @@
               </div>
 
               <!-- Compartidos -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Compartidos</span>
                   <i class="fas fa-share-nodes" style="color: #8b5cf6;"></i>
@@ -1209,7 +1210,7 @@
               </div>
 
               <!-- Guardados -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Guardados</span>
                   <i class="fas fa-bookmark" style="color: #eab308;"></i>
@@ -1218,7 +1219,7 @@
               </div>
 
               <!-- Clics -->
-              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;">
+              <div style="background: #ffffff; border-radius: 14px; padding: 11px 12px; border: 1px solid #ffe4e6;" class="ui-surface">
                 <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
                   <span>Clics</span>
                   <i class="fas fa-mouse-pointer" style="color: #10b981;"></i>
@@ -1228,7 +1229,7 @@
             </div>
 
             <!-- Base del Embudo de Interacción: Interacciones Totales -->
-            <div style="background: #ffffff; border-radius: 16px; padding: 14px 18px; border: 2px solid #fda4af; box-shadow: 0 4px 12px rgba(225,29,72,0.08); display: flex; align-items: center; justify-content: space-between;">
+            <div style="background: #ffffff; border-radius: 16px; padding: 14px 18px; border: 2px solid #fda4af; box-shadow: 0 4px 12px rgba(225,29,72,0.08); display: flex; align-items: center; justify-content: space-between;" class="ui-surface">
               <div>
                 <div style="font-size: 0.78rem; font-weight: 800; color: #be123c; text-transform: uppercase;">Interacciones Totales</div>
                 <div style="font-size: 0.7rem; color: #64748b;">Suma de acciones (likes, comentarios, compartidos, guardados y clics)</div>
@@ -1240,7 +1241,7 @@
         </div>
 
         <!-- LADO DERECHO: SILUETA VISUAL DEL EMBUDO (PROPORCIÓN ESCALONADA) -->
-        <div style="background: #f8fafc; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: #f8fafc; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;" class="ui-surface">
           <div>
             <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b; margin: 0 0 4px 0; text-align: center;">Silueta del Embudo</h3>
             <p style="font-size: 0.75rem; color: #64748b; margin: 0 0 18px 0; text-align: center;">Representación centrada por escalón de volumen</p>
@@ -1248,38 +1249,38 @@
 
           <div id="redesVisualFunnelBars" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: auto 0; width: 100%;">
             <!-- Escalón 1: Impresiones -->
-            <div style="width: 100%; background: linear-gradient(90deg, #4338ca, #6366f1); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box; box-shadow: 0 2px 8px rgba(79,70,229,0.2);">
+            <div style="width: 100%; background: linear-gradient(90deg, #4338ca, #6366f1); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box; box-shadow: 0 2px 8px rgba(79,70,229,0.2);" class="ui-surface ui-data-bar">
               <span>1. Impresiones</span>
               <span id="vf_impresiones">0</span>
             </div>
             <!-- Escalón 2: Alcance -->
-            <div style="width: 88%; background: linear-gradient(90deg, #4f46e5, #818cf8); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box;">
+            <div style="width: 88%; background: linear-gradient(90deg, #4f46e5, #818cf8); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box;" class="ui-surface ui-data-bar">
               <span>2. Alcance</span>
               <span id="vf_alcance">0</span>
             </div>
             <!-- Escalón 3: Visualizaciones -->
-            <div style="width: 76%; background: linear-gradient(90deg, #2563eb, #60a5fa); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box;">
+            <div style="width: 76%; background: linear-gradient(90deg, #2563eb, #60a5fa); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; box-sizing: border-box;" class="ui-surface ui-data-bar">
               <span>3. Visualizaciones</span>
               <span id="vf_visualizaciones">0</span>
             </div>
             <!-- Escalón 4: Espectadores Únicos -->
-            <div style="width: 64%; background: linear-gradient(90deg, #0284c7, #38bdf8); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; box-sizing: border-box;">
+            <div style="width: 64%; background: linear-gradient(90deg, #0284c7, #38bdf8); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; box-sizing: border-box;" class="ui-surface ui-data-bar">
               <span>4. Espectadores Únicos</span>
               <span id="vf_espectadores">0</span>
             </div>
             <!-- Escalón 5: Visitas al Perfil -->
-            <div style="width: 52%; background: linear-gradient(90deg, #9333ea, #c084fc); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; box-sizing: border-box;">
+            <div style="width: 52%; background: linear-gradient(90deg, #9333ea, #c084fc); color: white; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; box-sizing: border-box;" class="ui-surface ui-data-bar">
               <span>5. Visitas al Perfil</span>
               <span id="vf_visitas_perfil">0</span>
             </div>
             <!-- Escalón 6: Interacciones Totales -->
-            <div style="width: 42%; min-width: 190px; background: linear-gradient(90deg, #e11d48, #fb7185); color: white; padding: 11px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 800; box-sizing: border-box; box-shadow: 0 4px 12px rgba(225,29,72,0.28);">
+            <div style="width: 42%; min-width: 190px; background: linear-gradient(90deg, #e11d48, #fb7185); color: white; padding: 11px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 800; box-sizing: border-box; box-shadow: 0 4px 12px rgba(225,29,72,0.28);" class="ui-surface ui-data-bar">
               <span>6. Interacciones</span>
               <span id="vf_interacciones">0</span>
             </div>
           </div>
 
-          <div style="margin-top: 16px; background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+          <div style="margin-top: 16px; background: #ffffff; border-radius: 14px; padding: 12px 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;" class="ui-surface">
             <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; color: #475569; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">
               <div>
                 <strong style="color: #0f172a; font-size: 0.78rem;">% Engagement sobre Alcance</strong>
@@ -1304,10 +1305,10 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px;">
       
       <!-- BLOQUE APARTE 1: RETENCIÓN (VIDEOS) -->
-      <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+      <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;" class="ui-surface">
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(139, 92, 246, 0.12); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(139, 92, 246, 0.12); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 18px;" class="ui-surface ui-icon">
               <i class="fas fa-film"></i>
             </div>
             <div>
@@ -1315,12 +1316,12 @@
               <p style="margin: 2px 0 0; font-size: 0.76rem; color: #64748b;">Métricas independientes de permanencia y consumo de video</p>
             </div>
           </div>
-          <span style="background: #f5f3ff; color: #6d28d9; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 10px;">Datos Aparte</span>
+          <span style="background: #f5f3ff; color: #6d28d9; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 10px;" class="ui-badge">Datos Aparte</span>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <!-- Tiempo total de reproducción -->
-          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;" class="ui-surface">
             <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
               <span>Tiempo Total Reproducción</span>
               <i class="fas fa-clock" style="color: #7c3aed;"></i>
@@ -1330,7 +1331,7 @@
           </div>
 
           <!-- Duración media de visualización -->
-          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;" class="ui-surface">
             <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: flex; align-items: center; justify-content: space-between;">
               <span>Duración Media Visualización</span>
               <i class="fas fa-stopwatch" style="color: #8b5cf6;"></i>
@@ -1340,34 +1341,34 @@
           </div>
 
           <!-- Porcentaje promedio visto -->
-          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;" class="ui-surface">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <span style="font-size: 0.74rem; font-weight: 700; color: #64748b;">Porcentaje Promedio Visto</span>
               <span id="rf_porcentaje_visto" style="font-size: 1.2rem; font-weight: 800; color: #6d28d9;">0.0%</span>
             </div>
-            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;">
-              <div id="rf_bar_porcentaje_visto" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #6d28d9); border-radius: 99px; transition: width 0.3s;"></div>
+            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;" class="ui-surface">
+              <div id="rf_bar_porcentaje_visto" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #6d28d9); border-radius: 99px; transition: width 0.3s;" class="ui-surface ui-data-bar"></div>
             </div>
           </div>
 
           <!-- Tasa de finalización -->
-          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;">
+          <div style="background: #f8fafc; border-radius: 16px; padding: 14px 16px; border: 1px solid #e2e8f0;" class="ui-surface">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <span style="font-size: 0.74rem; font-weight: 700; color: #64748b;">Tasa de Finalización</span>
               <span id="rf_tasa_finalizacion" style="font-size: 1.2rem; font-weight: 800; color: #ec4899;">0.0%</span>
             </div>
-            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;">
-              <div id="rf_bar_tasa_finalizacion" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ec4899, #be185d); border-radius: 99px; transition: width 0.3s;"></div>
+            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;" class="ui-surface">
+              <div id="rf_bar_tasa_finalizacion" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ec4899, #be185d); border-radius: 99px; transition: width 0.3s;" class="ui-surface ui-data-bar"></div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- BLOQUE APARTE 2: CRECIMIENTO DE COMUNIDAD -->
-      <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+      <div style="background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;" class="ui-surface">
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;" class="ui-surface ui-icon">
               <i class="fas fa-users"></i>
             </div>
             <div>
@@ -1375,29 +1376,29 @@
               <p style="margin: 2px 0 0; font-size: 0.76rem; color: #64748b;">Variación neta de seguidores y tasa de crecimiento</p>
             </div>
           </div>
-          <span style="background: #ecfdf5; color: #059669; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 10px;">Datos Aparte</span>
+          <span style="background: #ecfdf5; color: #059669; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 10px;" class="ui-badge">Datos Aparte</span>
         </div>
 
         <!-- 3 Bloques Superiores: Iniciales, Nuevos, Perdidos -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-          <div style="background: #f8fafc; border-radius: 14px; padding: 12px 14px; border: 1px solid #e2e8f0;">
+          <div style="background: #f8fafc; border-radius: 14px; padding: 12px 14px; border: 1px solid #e2e8f0;" class="ui-surface">
             <div style="font-size: 0.72rem; font-weight: 700; color: #64748b;">Seguidores Iniciales</div>
             <div id="rf_seguidores_iniciales" style="font-size: 1.3rem; font-weight: 800; color: #1e293b; margin-top: 6px;">0</div>
           </div>
 
-          <div style="background: #f0fdf4; border-radius: 14px; padding: 12px 14px; border: 1px solid #bbf7d0;">
+          <div style="background: #f0fdf4; border-radius: 14px; padding: 12px 14px; border: 1px solid #bbf7d0;" class="ui-surface">
             <div style="font-size: 0.72rem; font-weight: 700; color: #15803d;">+ Nuevos Seguidores</div>
             <div id="rf_nuevos_seguidores" style="font-size: 1.3rem; font-weight: 800; color: #16a34a; margin-top: 6px;">+0</div>
           </div>
 
-          <div style="background: #fef2f2; border-radius: 14px; padding: 12px 14px; border: 1px solid #fecaca;">
+          <div style="background: #fef2f2; border-radius: 14px; padding: 12px 14px; border: 1px solid #fecaca;" class="ui-surface">
             <div style="font-size: 0.72rem; font-weight: 700; color: #b91c1c;">- Seguidores Perdidos</div>
             <div id="rf_seguidores_perdidos" style="font-size: 1.3rem; font-weight: 800; color: #dc2626; margin-top: 6px;">-0</div>
           </div>
         </div>
 
         <!-- 2 Bloques Inferiores: Seguidores Finales & Tasa de Crecimiento (%) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); border-radius: 16px; padding: 14px 18px; border: 1px solid #a7f3d0;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); border-radius: 16px; padding: 14px 18px; border: 1px solid #a7f3d0;" class="ui-surface">
           <div style="display: flex; align-items: center; justify-content: space-between; border-right: 1px solid #cbd5e1; padding-right: 12px;">
             <div>
               <div style="font-size: 0.74rem; font-weight: 800; color: #065f46; text-transform: uppercase;">Seguidores Finales</div>
@@ -1411,7 +1412,7 @@
               <div style="font-size: 0.74rem; font-weight: 800; color: #065f46; text-transform: uppercase;">Tasa de Crecimiento</div>
               <div style="font-size: 0.68rem; color: #64748b;">Crecimiento neto (%)</div>
             </div>
-            <div id="rf_tasa_crecimiento" style="font-size: 1.5rem; font-weight: 900; color: #059669; background: #ffffff; padding: 4px 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">0.00%</div>
+            <div id="rf_tasa_crecimiento" style="font-size: 1.5rem; font-weight: 900; color: #059669; background: #ffffff; padding: 4px 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);" class="ui-surface">0.00%</div>
           </div>
         </div>
       </div>
@@ -1419,7 +1420,7 @@
     </div>
 
     <!-- ===== BITÁCORA DE REGISTROS SEMANALES ===== -->
-    <div style="background: #FFFFFF; border-radius: 24px; padding: 22px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;">
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 22px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;" class="ui-surface">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
         <div>
           <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">Bitácora de Semanas Registradas</h3>
@@ -1463,17 +1464,17 @@
       <div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <h2 class="modal-title" style="margin: 0;">Captura de Estadísticas Semanales · Redes Sociales</h2>
-          <span id="modalRedesCompanyBadge" style="background: rgba(79, 70, 229, 0.12); color: #4f46e5; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;">EHS INTEGRAL</span>
+          <span id="modalRedesCompanyBadge" style="background: rgba(79, 70, 229, 0.12); color: #4f46e5; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;" class="ui-badge">EHS INTEGRAL</span>
         </div>
         <p class="modal-subtitle" style="margin: 4px 0 0;">Registra las métricas consolidadas de la semana, retención de video, comunidad y link del post</p>
       </div>
 
       <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-        <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 6px 12px; border-radius: 12px; border: 1px solid #cbd5e1;">
+        <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 6px 12px; border-radius: 12px; border: 1px solid #cbd5e1;" class="ui-surface">
           <label style="font-size: 0.8rem; font-weight: 700; color: #334155;">Semana (Lunes):</label>
           <input type="date" id="modalRedesDateInput" style="border: none; background: transparent; font-weight: 800; font-size: 0.85rem; color: #0f172a; outline: none; cursor: pointer;" />
         </div>
-        <span id="modalRedesWeekLabel" style="font-size: 0.72rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 2px 8px; border-radius: 6px;">Semana</span>
+        <span id="modalRedesWeekLabel" style="font-size: 0.72rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 2px 8px; border-radius: 6px;" class="ui-badge">Semana</span>
       </div>
     </div>
 
@@ -1497,7 +1498,7 @@
     </div>
 
     <!-- Enlace / URL de la Publicación Destacada de la Semana -->
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px;" class="ui-surface">
       <div class="form-group" style="margin: 0;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
           <label style="font-size: 0.76rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px; margin: 0;">
@@ -1515,7 +1516,7 @@
     <div style="display: flex; flex-direction: column; gap: 16px;">
       
       <!-- 1. ATRACCIÓN / VISIBILIDAD -->
-      <div style="background: #f5f7ff; border: 1px solid #c7d2fe; border-radius: 14px; padding: 14px 16px;">
+      <div style="background: #f5f7ff; border: 1px solid #c7d2fe; border-radius: 14px; padding: 14px 16px;" class="ui-surface">
         <div style="font-size: 0.82rem; font-weight: 800; color: #3730a3; margin-bottom: 10px; text-transform: uppercase;">
           1. Embudo — Atracción / Visibilidad
         </div>
@@ -1544,7 +1545,7 @@
       </div>
 
       <!-- 2. INTERACCIÓN -->
-      <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 14px; padding: 14px 16px;">
+      <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 14px; padding: 14px 16px;" class="ui-surface">
         <div style="font-size: 0.82rem; font-weight: 800; color: #9f1239; margin-bottom: 10px; text-transform: uppercase;">
           2. Embudo — Interacción
         </div>
@@ -1584,7 +1585,7 @@
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px;">
         
         <!-- 3. RETENCIÓN (VIDEOS) -->
-        <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 14px; padding: 14px 16px;">
+        <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 14px; padding: 14px 16px;" class="ui-surface">
           <div style="font-size: 0.82rem; font-weight: 800; color: #6b21a8; margin-bottom: 10px; text-transform: uppercase;">
             3. Retención (Videos) — Aparte del Embudo
           </div>
@@ -1609,7 +1610,7 @@
         </div>
 
         <!-- 4. CRECIMIENTO DE COMUNIDAD -->
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 14px; padding: 14px 16px;">
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 14px; padding: 14px 16px;" class="ui-surface">
           <div style="font-size: 0.82rem; font-weight: 800; color: #065f46; margin-bottom: 10px; text-transform: uppercase;">
             4. Crecimiento de Comunidad — Aparte del Embudo
           </div>
@@ -1716,7 +1717,7 @@
       <div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <h2 class="modal-title" style="margin: 0;">Captura y Edición de Ventas</h2>
-          <span id="modalVentasCompanyBadge" style="background: rgba(22, 147, 93, 0.12); color: #16935d; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;">GESTIONRH</span>
+          <span id="modalVentasCompanyBadge" style="background: rgba(22, 147, 93, 0.12); color: #16935d; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;" class="ui-badge">GESTIONRH</span>
         </div>
         <p class="modal-subtitle" id="modalVentasSubtitle" style="margin: 4px 0 0;">Ingresa y modifica los datos comerciales reales de facturación</p>
       </div>
@@ -2009,13 +2010,13 @@
 
 <!-- ===== IRMP MODAL ===== -->
 <div class="modal-overlay" id="irmpModal">
-  <div class="modal modal-large" style="max-width: 700px; padding: 2rem; background: #ffffff; border-radius: 16px;">
+  <div class="modal modal-large ui-surface" style="max-width: 700px; padding: 2rem; background: #ffffff; border-radius: 16px;">
     <button class="modal-close" id="closeIrmp" style="font-size: 1.5rem; border: none; background: transparent; cursor: pointer; position: absolute; right: 1.5rem; top: 1.5rem; color: #64748b;">&times;</button>
     <h2 class="modal-title" style="background: linear-gradient(to right, #8b5cf6, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center;">Índice de Rendimiento de Marketing Ponderado (IRMP)</h2>
     <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; text-align: center;">Atracción (20%) + Interacción (30%) + Conversiones (50%) comparado con el rendimiento histórico máximo.</p>
     
     <!-- Controls: Type selection + Period Selector -->
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;" class="ui-surface">
       <div style="display: flex; gap: 8px;">
         <button id="btnIrmpTypeMonth" class="compare-tab-btn active">Por Mes</button>
         <button id="btnIrmpTypeQuarter" class="compare-tab-btn">Por Trimestre</button>
@@ -2028,7 +2029,7 @@
 
     <!-- Scorecard Section -->
     <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 1.5rem;">
-      <div id="irmpGaugeSingle" style="width: 130px; height: 130px; border-radius: 50%; background: conic-gradient(#8b5cf6 0%, #e2e8f0 0%); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25); transition: background 0.3s ease;">
+      <div id="irmpGaugeSingle" style="width: 130px; height: 130px; border-radius: 50%; background: conic-gradient(#8b5cf6 0%, #e2e8f0 0%); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25); transition: background 0.3s ease;" class="ui-data-bar">
         <div style="width: 110px; height: 110px; border-radius: 50%; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center;">
           <span id="irmpValueSingle" style="font-size: 2.5rem; font-weight: 800; color: #6d28d9; line-height: 1;">—</span>
           <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">IRMP</span>
@@ -2048,13 +2049,13 @@
 
 <!-- ===== GROWTH MODAL ===== -->
 <div class="modal-overlay" id="growthModal">
-  <div class="modal modal-large" style="max-width: 650px; padding: 2rem; background: #ffffff; border-radius: 16px;">
+  <div class="modal modal-large ui-surface" style="max-width: 650px; padding: 2rem; background: #ffffff; border-radius: 16px;">
     <button class="modal-close" id="closeGrowth" style="font-size: 1.5rem; border: none; background: transparent; cursor: pointer; position: absolute; right: 1.5rem; top: 1.5rem; color: #64748b;">&times;</button>
     <h2 class="modal-title" style="background: linear-gradient(to right, #10b981, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center;">Crecimiento Promedio General</h2>
     <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; text-align: center;">Promedio del porcentaje de crecimiento o decrecimiento de todos tus datos comparados con el período anterior.</p>
     
     <!-- Controls: Period Selector -->
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;" class="ui-surface">
       <div style="display: flex; gap: 8px;">
         <button id="btnGrowthTypeMonth" class="compare-tab-btn active">Por Mes</button>
         <button id="btnGrowthTypeQuarter" class="compare-tab-btn">Por Trimestre</button>
@@ -2066,7 +2067,7 @@
     </div>
 
     <!-- Big Growth Indicator -->
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 2rem; text-align: center; margin-bottom: 2rem; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1);" id="growthIndicatorBox">
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 2rem; text-align: center; margin-bottom: 2rem; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1);" id="growthIndicatorBox" class="ui-surface">
       <span style="font-size: 0.9rem; color: #047857; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Crecimiento Promedio de Datos</span>
       <div id="averageGrowthValue" style="font-size: 3.5rem; font-weight: 900; color: #10b981; margin: 0.5rem 0;">—</div>
       <p id="averageGrowthDesc" style="font-size: 0.9rem; color: #047857; font-weight: 500; max-width: 500px; margin: 0 auto; line-height: 1.4;"></p>
@@ -2084,13 +2085,13 @@
 
 <!-- ===== ACTIVITIES MODAL ===== -->
 <div class="modal-overlay" id="activitiesModal">
-  <div class="modal modal-large" style="max-width: 550px; padding: 2rem; background: #ffffff; border-radius: 16px;">
+  <div class="modal modal-large ui-surface" style="max-width: 550px; padding: 2rem; background: #ffffff; border-radius: 16px;">
     <button class="modal-close" id="closeActivities" style="font-size: 1.5rem; border: none; background: transparent; cursor: pointer; position: absolute; right: 1.5rem; top: 1.5rem; color: #64748b;">&times;</button>
     <h2 class="modal-title" style="background: linear-gradient(to right, #3b82f6, #1d4ed8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center;">Otras Actividades</h2>
     <p id="activitiesSubtitle" style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; text-align: center;">Mapeo de actividades adicionales realizadas en el mes.</p>
     
     <!-- Controls: Period Selector -->
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;" class="ui-surface">
       <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
         <button id="btnActivitiesTypeMonth" class="compare-tab-btn active">Mensual</button>
         <button id="btnActivitiesTypeBimonth" class="compare-tab-btn">Bimestral</button>
@@ -2152,6 +2153,7 @@
 <!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
+<script src="theme.js"></script>
 <script src="sales-activity-model.js"></script>
 <script src="sales-activity.js"></script>
 <script src="app.js"></script>
