@@ -1,8 +1,9 @@
-/* Presentation layer. Existing grids, ordering, spacing and dimensions are retained.
+/* Presentation layer. Existing grids and element order are retained; primary metric tiles share a consistent size.
    Important declarations override the application's existing inline color styles. */
 body.ui-theme {
-  --accent: #d3f56b;
-  --accent-hover: #c5e85a;
+  --accent: #165e98;
+  --tile: #f2f4f7;
+  --accent-hover: #124e80;
   --ink: #191c17;
   --muted: #697064;
   --canvas: #f2f3ef;
@@ -32,20 +33,20 @@ body.ui-theme {
 .ui-theme button, .ui-theme input, .ui-theme select, .ui-theme textarea { font-family: var(--font); }
 .ui-theme :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #5c762e; outline-offset: 3px; }
 .ui-theme :is(button, input, select, textarea) { accent-color: #5c762e; }
-.ui-theme ::selection { background: var(--accent); color: var(--ink); }
+.ui-theme ::selection { background: var(--accent); color: #fff; }
 .ui-theme .app-layout { background: var(--canvas); }
 
-/* Dark navigation, a single lime active state and quiet supporting text. */
+/* Dark navigation, a single blue active state and quiet supporting text. */
 .ui-theme .app-sidebar { background: #191c17; box-shadow: none; border-radius: 22px; }
-.ui-theme .sidebar-brand-icon { background: var(--accent); color: var(--ink); box-shadow: none; }
+.ui-theme .sidebar-brand-icon { background: var(--accent); color: #fff; box-shadow: none; }
 .ui-theme .sidebar-brand-name { color: #f8faf4; letter-spacing: -.025em; }
 .ui-theme .sidebar-brand-desc, .ui-theme .sidebar-menu-header { color: #a9b19f; }
 .ui-theme .sidebar-nav-item { color: #c7cdbf; font-weight: 500; }
-.ui-theme .sidebar-nav-item.active { background: var(--accent); color: var(--ink); box-shadow: none; }
-.ui-theme .sidebar-nav-item.active svg { stroke: var(--ink); }
+.ui-theme .sidebar-nav-item.active { background: var(--accent); color: #fff; box-shadow: none; }
+.ui-theme .sidebar-nav-item.active svg { stroke: #fff; }
 .ui-theme .sidebar-nav-item:not(.active):hover { background: #30362b; color: #fff; }
 .ui-theme .sidebar-footer-card { background: #262c21; border-color: #3a4232; box-shadow: none; border-radius: 14px; }
-.ui-theme .sidebar-footer-tag { color: var(--accent); }
+.ui-theme .sidebar-footer-tag { color: #b6d7f1; }
 .ui-theme .sidebar-footer-desc { color: #b5bdac; }
 .ui-theme #sidebarBtnLogout { background: transparent !important; border-color: #68735c !important; color: #e0e7d7 !important; }
 
@@ -76,9 +77,9 @@ body.ui-theme {
 .ui-theme .page-chip { color: var(--ink) !important; }
 .ui-theme .ui-data-bar { background: #edf0e7 !important; color: var(--ink) !important; box-shadow: none !important; }
 
-/* Secondary KPI tiles stay white. Only the total for each section is accented. */
+/* Secondary KPI tiles use light gray. Only the total for each section is accented. */
 .ui-theme :is(.metric, .metric.highlight, .metric.total-gasto, .sales-activity-metric) {
-  background: #fff !important; color: var(--ink); border-color: var(--line) !important; border-radius: 12px;
+  background: var(--tile) !important; color: var(--ink); border-color: var(--line) !important; border-radius: 12px;
   box-shadow: inset 0 0 0 1px var(--line);
 }
 .ui-theme :is(.metric.highlight-metric, .metric:has(#gasto_inversion_total), .metric:has(#ventas_totales), .metric:has(#retargeting_apertura)) {
@@ -91,7 +92,7 @@ body.ui-theme {
 .ui-theme .banner-logo-wrap { background: #fff; border-color: #fff; backdrop-filter: none; }
 
 /* The same hierarchy applies in Sales and Social: one lead KPI, neutral peers. */
-.ui-theme .ventas-kpi-grid > div { background: #fff !important; border-color: var(--line) !important; box-shadow: none !important; border-radius: 18px !important; }
+.ui-theme .ventas-kpi-grid > div { background: var(--tile) !important; border-color: var(--line) !important; box-shadow: none !important; border-radius: 18px !important; }
 .ui-theme .ventas-kpi-grid > div:first-child { background: var(--accent) !important; border-color: var(--accent) !important; }
 .ui-theme .ventas-kpi-grid > div :is(div, span, strong) { color: var(--ink) !important; }
 .ui-theme .ventas-kpi-grid > div > div:first-child > div { background: #f2f4ec !important; box-shadow: none !important; }
@@ -148,7 +149,7 @@ body.ui-theme {
 .ui-theme #loginOverlay > div { background: #fff !important; border-color: #dce1d5 !important; border-radius: 22px !important; box-shadow: 0 24px 70px #20291a12 !important; backdrop-filter: none !important; color: var(--ink) !important; }
 .ui-theme #loginOverlay :is(label, p) { color: #647058 !important; }
 .ui-theme #loginOverlay img { filter: none !important; }
-.ui-theme #loginOverlay button[type="submit"] { background: #191c17 !important; color: var(--accent) !important; border-radius: 10px !important; }
+.ui-theme #loginOverlay button[type="submit"] { background: #191c17 !important; color: #fff !important; border-radius: 10px !important; }
 .ui-theme #loginOverlay input { background: #f6f8f2 !important; color: var(--ink) !important; }
 .ui-theme #loginError { color: #a4382f !important; }
 @media (prefers-reduced-motion: reduce) {
@@ -164,3 +165,51 @@ body.ui-theme {
 .ui-theme .sales-activity-panel .sales-activity-metric { box-shadow: none; }
 .ui-theme .ventas-kpi-grid > div:first-child .ui-icon { background: #191c17 !important; color: var(--accent) !important; }
 .ui-theme .ventas-kpi-grid > div:first-child .ui-icon svg { stroke: var(--accent); }
+
+/* Primary totals have matching dimensions and typography in both columns. */
+.ui-theme .metric.highlight-metric {
+  box-sizing: border-box;
+  height: 176px;
+  min-height: 176px;
+  padding: 20px !important;
+  border: 1px solid var(--accent) !important;
+  justify-content: flex-start;
+  text-align: left !important;
+  gap: 6px;
+}
+.ui-theme .metric.highlight-metric .metric-label {
+  font-size: 12px !important;
+  line-height: 1.4;
+  font-weight: 600 !important;
+  letter-spacing: .06em;
+}
+.ui-theme .metric.highlight-metric .metric-value {
+  font-size: 36px !important;
+  line-height: 1.15;
+  font-weight: 700;
+}
+.ui-theme .metric.highlight-metric .sub-metrics {
+  font-size: 12px !important;
+  line-height: 1.5;
+  flex-wrap: wrap;
+  margin-top: 4px !important;
+}
+
+/* Light secondary tiles sit on white panels. Blue totals use white text. */
+.ui-theme .card .card,
+.ui-theme .sales-activity-rankings article,
+.ui-theme #v_historical_bars_list > div { background: var(--tile) !important; }
+.ui-theme :is(.metric.highlight-metric, .metric:has(#gasto_inversion_total), .metric:has(#ventas_totales), .metric:has(#retargeting_apertura)) :is(span, div, strong) {
+  color: #fff !important;
+}
+.ui-theme .ventas-kpi-grid > div:first-child :is(div, span, strong),
+.ui-theme .sales-activity-metric:first-child :is(span, strong) { color: #fff !important; }
+.ui-theme .ventas-kpi-grid > div:first-child .ui-icon {
+  background: #ffffff24 !important;
+  color: #fff !important;
+}
+.ui-theme .ventas-kpi-grid > div:first-child .ui-icon svg { stroke: #fff; }
+.ui-theme .ventas-kpi-grid > div:first-child .ventas-pill-badge {
+  background: #ffffff24 !important;
+  color: #fff !important;
+}
