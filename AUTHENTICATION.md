@@ -17,12 +17,16 @@ roles del navegador y el encabezado `X-User-Role` no conceden permisos.
 
 Las sesiones duran 12 horas. Configura `SESSION_SECRET` como variable secreta del
 servidor, con un valor aleatorio largo y compartido por todas las instancias de
-producción (incluido Vercel). Sin esta variable, se genera una clave temporal al
-arrancar: las sesiones locales dejan de ser válidas al reiniciar y no se comparten
-entre instancias. No guardes su valor en Git.
+producción (incluido Vercel). Si esta variable no existe y Firebase está
+configurado, se deriva una clave estable para las sesiones a partir de su
+credencial privada existente, únicamente en el servidor. Esto permite validar
+la sesión entre instancias y después de un arranque en frío. Sin ninguna de estas
+configuraciones, el modo local usa una clave temporal y requiere iniciar sesión
+de nuevo al reiniciar. No guardes valores secretos en Git.
 
 Después de actualizar, las sesiones antiguas guardadas solo en el navegador
 requieren iniciar sesión de nuevo.
 
-Ejecuta `node --test tests/access.test.js` para verificar los permisos con un
-servidor aislado y datos temporales, sin modificar los datos de la aplicación.
+Ejecuta `node --test tests/*.test.js` para verificar los permisos, las métricas y
+las sesiones entre instancias con servidores aislados y datos temporales, sin
+modificar los datos de la aplicación.

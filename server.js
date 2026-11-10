@@ -127,8 +127,13 @@ const AUTH_USERS = [
   }
 ];
 
-// Use the same SESSION_SECRET on all production instances. Local sessions expire on restart without it.
-const SESSION_KEY = process.env.SESSION_SECRET || crypto.randomBytes(32);
+// Every serverless instance must derive the same signing key. Prefer a dedicated
+// secret; when Firebase is configured, derive a separate key from its existing
+// server-only credential instead of generating a different key per cold start.
+const firebaseSessionKey = typeof serviceAccount?.private_key === 'string' && serviceAccount.private_key
+  ? crypto.createHmac('sha256', serviceAccount.private_key).update('digital-insights/session/v1').digest()
+  : null;
+const SESSION_KEY = process.env.SESSION_SECRET || firebaseSessionKey || crypto.randomBytes(32);
 const SESSION_MAX_AGE = 12 * 60 * 60 * 1000;
 const SALES_FIELDS = ['empresa', 'periodo', 'comercial_facturacion', 'comercial_cierres', 'comercial_ticket', ...salesActivity.FIELDS];
 
