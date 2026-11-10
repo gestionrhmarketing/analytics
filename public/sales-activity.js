@@ -2,7 +2,8 @@ let salesActivityCompany = null;
 let salesActivityEventsBound = false;
 
 function salesActivityPeriodKey() {
-  const [year, month] = document.getElementById('salesActivityPeriod').value.split('-');
+  const year = document.getElementById('salesActivityReportYear').value;
+  const month = document.getElementById('salesActivityReportMonth').value;
   return year && month ? `${month}-${year}` : '';
 }
 
@@ -136,7 +137,8 @@ function openSalesActivityForm() {
   if (!canAccess('ventas')) return;
   salesActivityCompany = salesCompany() || ventasActiveCompany;
   const month = document.getElementById('salesActivityMonth').value || String(new Date().getMonth() + 1).padStart(2, '0');
-  document.getElementById('salesActivityPeriod').value = `${ventasActiveYear}-${month}`;
+  document.getElementById('salesActivityReportYear').value = String(ventasActiveYear);
+  document.getElementById('salesActivityReportMonth').value = month;
   document.getElementById('salesActivityFormCompany').textContent = COMPANIES[salesActivityCompany].name;
   loadSalesActivityForm();
   openModal('modalSalesActivity');
@@ -185,7 +187,8 @@ function bindSalesActivityEvents() {
   salesActivityEventsBound = true;
   document.getElementById('btnOpenSalesActivity').addEventListener('click', openSalesActivityForm);
   document.getElementById('salesActivityForm').addEventListener('submit', saveSalesActivity);
-  document.getElementById('salesActivityPeriod').addEventListener('change', loadSalesActivityForm);
+  document.getElementById('salesActivityReportMonth').addEventListener('change', loadSalesActivityForm);
+  document.getElementById('salesActivityReportYear').addEventListener('change', loadSalesActivityForm);
   document.getElementById('salesActivityMonth').addEventListener('change', renderSalesActivityDashboard);
   document.getElementById('addSalesProduct').addEventListener('click', () => addSalesActivityRow('product'));
   document.getElementById('addSalesQuote').addEventListener('click', () => addSalesActivityRow('quote'));
