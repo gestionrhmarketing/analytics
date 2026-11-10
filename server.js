@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 // Initialize Firebase Admin (Safe for deployment)
 let serviceAccount;
@@ -101,17 +102,76 @@ const AUTH_USERS = [
   },
   {
     username: 'Saul Peña',
-    aliases: ['saul peña', 'saul pena', 'saul'],
+    aliases: ['saul peña', 'saul pena', 'saul', 'saulpena'],
     password: 'DASaulS-2026$',
     name: 'Saul Peña',
     role: 'redes_only',
     allowedModules: ['redes']
+  },
+  {
+    username: 'Gerente EHS',
+    password: 'EHS2027%',
+    name: 'Gerente EHS',
+    role: 'ventas_ehs',
+    allowedModules: ['ventas'],
+    company: 'EHS'
+  },
+  {
+    username: 'Gerente Grh',
+    password: 'GRH2027$',
+    name: 'Gerente Grh',
+    role: 'ventas_grh',
+    allowedModules: ['ventas'],
+    company: 'GESTIONRH'
   }
 ];
 
+// Use the same SESSION_SECRET on all production instances. Local sessions expire on restart without it.
+const SESSION_KEY = process.env.SESSION_SECRET || crypto.randomBytes(32);
+const SESSION_MAX_AGE = 12 * 60 * 60 * 1000;
+const SALES_FIELDS = ['empresa', 'periodo', 'comercial_facturacion', 'comercial_cierres', 'comercial_ticket', 'comercial_leads'];
+
+function publicUser(user) {
+  const { username, name, role, allowedModules, company } = user;
+  return { username, name, role, allowedModules, company };
+}
+
+function signSession(payload) {
+  return crypto.createHmac('sha256', SESSION_KEY).update(payload).digest('base64url');
+}
+
+function sessionUser(req) {
+  const token = (req.headers.cookie || '').split(';').map(c => c.trim()).find(c => c.startsWith('di_session='));
+  if (!token) return null;
+  const [payload, signature] = token.slice('di_session='.length).split('.');
+  if (!payload || !signature) return null;
+  const expected = Buffer.from(signSession(payload));
+  const actual = Buffer.from(signature);
+  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) return null;
+  try {
+    const session = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    if (!Number.isFinite(session.expires) || session.expires <= Date.now()) return null;
+    return AUTH_USERS.find(u => u.username === session.username) || null;
+  } catch {
+    return null;
+  }
+}
+
+function sendReports(req, res, records) {
+  if (!req.user.company) return res.json(records);
+  return res.json(records.filter(r => r.empresa === req.user.company).map(r =>
+    Object.fromEntries(SALES_FIELDS.filter(key => Object.hasOwn(r, key)).map(key => [key, r[key]]))
+  ));
+}
+
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
-  const cleanUser = (username || '').trim().toLowerCase();
+  const cleanUser = typeof username === 'string' ? username.trim().toLowerCase() : '';
   const found = AUTH_USERS.find(u => 
     (u.username.toLowerCase() === cleanUser || (u.aliases && u.aliases.includes(cleanUser))) &&
     u.password === password
@@ -121,16 +181,31 @@ app.post('/api/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
   }
 
-  return res.json({
-    success: true,
-    user: {
-      username: found.username,
-      name: found.name,
-      role: found.role,
-      allowedModules: found.allowedModules
-    }
+  const payload = Buffer.from(JSON.stringify({ username: found.username, expires: Date.now() + SESSION_MAX_AGE })).toString('base64url');
+  res.cookie('di_session', `${payload}.${signSession(payload)}`, {
+    httpOnly: true, sameSite: 'lax', secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+    maxAge: SESSION_MAX_AGE, path: '/'
   });
+  return res.json({ success: true, user: publicUser(found) });
 });
+
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('di_session', { path: '/' });
+  res.json({ success: true });
+});
+
+app.use('/api', (req, res, next) => {
+  req.user = sessionUser(req);
+  if (!req.user) return res.status(401).json({ success: false, message: 'Inicia sesión para continuar' });
+  const route = req.path.replace(/\/+$/, '').toLowerCase();
+  const module = route === '/data' ? (req.user.company ? 'ventas' : 'marketing') : route === '/redes' ? 'redes' : null;
+  if (module && !req.user.allowedModules.includes(module)) {
+    return res.status(403).json({ success: false, message: 'No tienes acceso a este módulo' });
+  }
+  next();
+});
+
+app.get('/api/session', (req, res) => res.json({ success: true, user: publicUser(req.user) }));
 
 // GET all data
 app.get('/api/data', async (req, res) => {
@@ -138,7 +213,7 @@ app.get('/api/data', async (req, res) => {
 
   // 1. Servir desde memoria si el caché está fresco (0 lecturas a Firestore)
   if (memoryCache && (now - lastCacheTime < CACHE_TTL_MS) && !req.query.force) {
-    return res.json(memoryCache);
+    return sendReports(req, res, memoryCache);
   }
 
   try {
@@ -155,14 +230,14 @@ app.get('/api/data', async (req, res) => {
         lastCacheTime = now;
         // Respaldo en disco por si Firebase agota su cuota en el futuro
         saveLocalData(results);
-        return res.json(results);
+        return sendReports(req, res, results);
       }
     }
 
     const localData = getLocalData();
     memoryCache = localData;
     lastCacheTime = now;
-    return res.json(localData);
+    return sendReports(req, res, localData);
 
   } catch (err) {
     console.error('⚠️ Error al consultar Firestore (posible cuota diaria agotada):', err.message);
@@ -170,27 +245,28 @@ app.get('/api/data', async (req, res) => {
     // Fallback de alta disponibilidad: Si Firebase agota su cuota, usamos la memoria o data-local.json
     if (memoryCache && memoryCache.length > 0) {
       console.log('🛡️ Servido desde caché en memoria para proteger la experiencia del usuario.');
-      return res.json(memoryCache);
+      return sendReports(req, res, memoryCache);
     }
 
     const fallbackLocal = getLocalData();
     console.log(`🛡️ Servido desde respaldo local data-local.json (${fallbackLocal.length} registros).`);
-    return res.json(fallbackLocal);
+    return sendReports(req, res, fallbackLocal);
   }
 });
 
 // POST save/update a record (supports single record or array of records)
 app.post('/api/data', async (req, res) => {
   try {
-    // Control de permisos a nivel servidor
-    const userRole = req.headers['x-user-role'];
-    if (userRole === 'redes_only') {
-      return res.status(403).json({ success: false, message: 'Acceso denegado: Usuario sin permisos para modificar Marketing o Ventas' });
-    }
-
     const records = Array.isArray(req.body) ? req.body : [req.body];
     if (records.length === 0) {
       return res.status(400).json({ success: false, message: 'No se enviaron datos' });
+    }
+
+    if (req.user.company && records.some(record =>
+      !record || record.empresa !== req.user.company || typeof record.periodo !== 'string' ||
+      Object.keys(record).some(key => !SALES_FIELDS.includes(key))
+    )) {
+      return res.status(403).json({ success: false, message: 'Solo puedes modificar Ventas de tu empresa' });
     }
 
     // 1. Guardar en Firebase Firestore con merge: true (preserva todos los demás campos)
